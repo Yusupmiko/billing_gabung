@@ -1,0 +1,115 @@
+<!-- templates/dashboard_up3_selector.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard UP3{% endblock %}
+{% block page_title %}Dashboard UP3 - Pilih Unit ULP{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3>Selamat Datang, {{ nama }} (UP3)</h3>
+        <p class="text-muted">Management Area: Seluruh ULP</p>
+    </div>
+</div>
+
+<!-- =================== NAVIGASI ULP CARDS =================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3"><i class="bi bi-building"></i> Navigasi ULP</h4>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for ulp in ulp_list %}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100 hover-card">
+            <div class="card-body">
+                <h5 class="text-primary mb-3">{{ ulp.nama_ulp }}</h5>
+                <p class="text-muted small mb-3">Kode: <strong>{{ ulp.unitup }}</strong></p>
+
+                <!-- Button Manage ULP -->
+                <a href="{{ url_for('dashboard_up3_manage', unitup=ulp.unitup) }}" 
+                   class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-table"></i> KELOLA DATA
+                </a>
+
+                <!-- Button View Data -->
+                <a href="{{ url_for('view_billing', unitup_filter=ulp.unitup) }}" 
+                   class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-eye"></i> MONITORING DB
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- =================== OVERVIEW SEMUA ULP =================== -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-bar-chart"></i> Overview Semua ULP
+            </div>
+            <div class="card-body">
+                {% if all_summary %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>UNITUP</th>
+                                <th>BLTH</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Naik</th>
+                                <th class="text-center">Turun</th>
+                                <th class="text-center">DIV/NA</th>
+                                <th class="text-center">Aman</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in all_summary %}
+                            <tr>
+                                <td><strong>{{ row.unitup }}</strong></td>
+                                <td>{{ row.blth }}</td>
+                                <td class="text-center"><span class="badge bg-primary">{{ row.total }}</span></td>
+                                <td class="text-center"><span class="badge bg-danger">{{ row.naik }}</span></td>
+                                <td class="text-center"><span class="badge bg-warning text-dark">{{ row.turun }}</span></td>
+                                <td class="text-center"><span class="badge bg-info text-dark">{{ row.div_na }}</span></td>
+                                <td class="text-center"><span class="badge bg-success">{{ row.aman }}</span></td>
+                                <td class="text-center">
+                                    <a href="{{ url_for('dashboard_up3_manage', unitup=row.unitup) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right-circle"></i> Kelola
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> Belum ada data billing. Klik <strong>"KELOLA DATA"</strong> untuk memulai.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.hover-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+</style>
+{% endblock %}

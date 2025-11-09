@@ -1,0 +1,156 @@
+<!-- templates/dashboard_ulp.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard ULP{% endblock %}
+{% block page_title %}Dashboard {{ unitup }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3>Selamat Datang, {{ nama }}</h3>
+        <p class="text-muted">Unit: {{ unitup }} | Periode: {{ blth_terakhir }}</p>
+    </div>
+</div>
+
+<!-- Upload Forms -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-cloud-upload"></i> Upload DPM
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Periode (BLTH)</label>
+                        <input type="month" name="blth" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">File DPM (Excel)</label>
+                        <input type="file" name="file_dpm" class="form-control" accept=".xlsx,.xls" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Upload DPM
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-gear"></i> Proses Billing
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="action" value="process_billing">
+                    <div class="mb-3">
+                        <label class="form-label">Periode untuk diproses</label>
+                        <input type="month" name="blth" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-play-circle"></i> Proses Billing
+                    </button>
+                </form>
+                <hr>
+                <form method="POST" action="{{ url_for('upload_dil') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Upload DIL (Nomor Meter)</label>
+                        <input type="file" name="file_dil" class="form-control" accept=".xlsx,.xls">
+                    </div>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-database"></i> Upload DIL
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row">
+    {% if summary %}
+        {% for row in summary %}
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Periode: {{ row.blth }}</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h4 class="text-primary">{{ row.total }}</h4>
+                            <small>Total</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-danger">{{ row.naik }}</h4>
+                            <small>Naik</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-warning">{{ row.turun }}</h4>
+                            <small>Turun</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-info">{{ row.div_na }}</h4>
+                            <small>DIV/NA</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-success">{{ row.aman }}</h4>
+                            <small>Aman</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Belum ada data billing. Silakan upload DPM terlebih dahulu.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <strong>Quick Actions</strong>
+            </div>
+           <div class="row g-3">
+    <div class="col-md-6">
+        <!-- ✅ PERBAIKAN: Gunakan query string biasa, bukan parameter route -->
+        <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
+           class="btn btn-primary btn-lg w-100">
+            <i class="bi bi-table"></i> Lihat Data Billing
+        </a>
+    </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function syncNomet() {
+    if (!confirm('Sync nomor meter dari tabel DIL?')) return;
+    
+    fetch('/sync_nomet', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

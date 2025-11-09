@@ -1,0 +1,94 @@
+<!-- templates/kelola_user.html -->
+{% extends "base.html" %}
+
+{% block title %}Kelola User{% endblock %}
+{% block page_title %}Kelola User{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-person-plus"></i> Tambah User Baru
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('tambah_user') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Kode UNITUP</label>
+                        <input type="text" name="unitup" class="form-control" placeholder="Contoh: ULP01" required>
+                        <small class="text-muted">Harus unik (1 user per ULP)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama ULP</label>
+                        <input type="text" name="nama_ulp" class="form-control" placeholder="Contoh: ULP Singkawang">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="Username login" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-select">
+                            <option value="ULP">ULP (User Biasa)</option>
+                            <option value="UP3">UP3 (Administrator)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save"></i> Tambah User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-people"></i> Daftar User ({{ users|length }})
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>UNITUP</th>
+                                <th>Nama ULP</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id_user }}</td>
+                                <td><span class="badge bg-info">{{ user.unitup }}</span></td>
+                                <td>{{ user.nama_ulp }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    <span class="badge bg-{% if user.role == 'UP3' %}danger{% else %}success{% endif %}">
+                                        {{ user.role }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('hapus_user', id_user=user.id_user) }}" 
+                                       class="btn btn-sm btn-danger"
+                                       onclick="return confirm('Yakin hapus user {{ user.username }}?')">
+                                        <i class="bi bi-trash"></i> Hapus
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

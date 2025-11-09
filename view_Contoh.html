@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Data Billing - SnapBill{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs .nav-link.active {
+        background-color: #0d6efd;
+        color: white !important;
+        font-weight: bold;
+    }
+    .tindak-lanjut, .stan-verifikasi {
+        font-size: 0.9rem;
+        resize: vertical;
+    }
+    .form-select {
+        font-size: 0.9rem;
+    }
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header & Filter -->
+    <div class="row mb-3 sticky-header py-3">
+        <div class="col-md-8">
+            <h2><i class="bi bi-table"></i> Data Billing - {{ username|upper }}</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <!-- <a href="{{ url_for('download_excel') }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Download Excel
+            </a> -->
+            <button id="downloadExcelBtn" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel"></i> Download Excel
+</button>
+
+        </div>
+    </div>
+
+    <!-- Filter KDKELOMPOK -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Filter KDKELOMPOK (Hari Baca)</label>
+                    <select name="kdkelompok" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Pilih KDKELOMPOK --</option>
+                        {% for i in range(1, 9) %}
+                        <option value="{{ i }}" {% if selected_kelompok == i|string %}selected{% endif %}>
+                            KDKELOMPOK {{ i }}
+                        </option>
+                        {% endfor %}
+                        <option value="P" {% if selected_kelompok == 'P' %}selected{% endif %}>KDKELOMPOK P</option>
+                        <option value="A" {% if selected_kelompok == 'A' %}selected{% endif %}>KDKELOMPOK A</option>
+                        <option value="I" {% if selected_kelompok == 'I' %}selected{% endif %}>KDKELOMPOK I</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">Filter Jam Nyala (untuk tab Jam Nyala)</label>
+                    <div class="input-group">
+                        <input type="number" name="jam_nyala_min" class="form-control" 
+                               value="{{ jam_nyala_min }}" placeholder="Min">
+                        <span class="input-group-text">s/d</span>
+                        <input type="number" name="jam_nyala_max" class="form-control" 
+                               value="{{ jam_nyala_max }}" placeholder="Max">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs" id="dataTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'dlpd_3bln' %}active{% endif %}" 
+               data-bs-toggle="tab" href="#dlpd_3bln">
+                <i class="bi bi-calendar3"></i> DLPD 3 Bulan
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'naik' %}active{% endif %}" 
+               data-bs-toggle="tab" href="#naik">
+                <i class="bi bi-arrow-up-circle"></i> NAIK
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'turun' %}active{% endif %}" 
+               data-bs-toggle="tab" href="#turun">
+                <i class="bi bi-arrow-down-circle"></i> TURUN
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'div' %}active{% endif %}" 
+               data-bs-toggle="tab" href="#div">
+                <i class="bi bi-question-circle"></i> DIV/NA
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'jam_nyala' %}active{% endif %}" 
+               data-bs-toggle="tab" href="#jam_nyala">
+                <i class="bi bi-clock"></i> Jam Nyala
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="dataTabContent">
+        <!-- Tab DLPD 3 Bulan -->
+        <div class="tab-pane fade {% if active_tab == 'dlpd_3bln' %}show active{% endif %}" id="dlpd_3bln">
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Data DLPD 3 Bulan (Naik 50% dari Rata-rata 3 Bulan)</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('simpan_dlpd') }}">
+                        <input type="hidden" name="kdkelompok" value="{{ selected_kelompok }}">
+                        <input type="hidden" name="active_tab" value="dlpd_3bln">
+                        
+                        <div class="table-responsive">
+                            {{ dlpd_3bln_html|safe }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> Simpan Data DLPD 3BLN
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab NAIK -->
+        <div class="tab-pane fade {% if active_tab == 'naik' %}show active{% endif %}" id="naik">
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Data Sortir NAIK</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('simpan_naik') }}">
+                        <input type="hidden" name="kdkelompok" value="{{ selected_kelompok }}">
+                        <input type="hidden" name="active_tab" value="naik">
+                        
+                        <div class="table-responsive">
+                            {{ naik_html_v2|safe }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-save"></i> Simpan Data NAIK
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab TURUN -->
+        <div class="tab-pane fade {% if active_tab == 'turun' %}show active{% endif %}" id="turun">
+            <div class="card mt-3">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Data Sortir TURUN</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('simpan_turun') }}">
+                        <input type="hidden" name="kdkelompok" value="{{ selected_kelompok }}">
+                        <input type="hidden" name="active_tab" value="turun">
+                        
+                        <div class="table-responsive">
+                            {{ turun_html_v2|safe }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="bi bi-save"></i> Simpan Data TURUN
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab DIV/NA -->
+        <div class="tab-pane fade {% if active_tab == 'div' %}show active{% endif %}" id="div">
+            <div class="card mt-3">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Data Sortir DIV/NA</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('simpan_div') }}">
+                        <input type="hidden" name="kdkelompok" value="{{ selected_kelompok }}">
+                        <input type="hidden" name="active_tab" value="div">
+                        
+                        <div class="table-responsive">
+                            {{ div_html_v2|safe }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-save"></i> Simpan Data DIV/NA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Jam Nyala -->
+        <div class="tab-pane fade {% if active_tab == 'jam_nyala' %}show active{% endif %}" id="jam_nyala">
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Data Jam Nyala</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('simpan_jam_nyala') }}">
+                        <input type="hidden" name="kdkelompok" value="{{ selected_kelompok }}">
+                        <input type="hidden" name="jam_nyala_min" value="{{ jam_nyala_min }}">
+                        <input type="hidden" name="jam_nyala_max" value="{{ jam_nyala_max }}">
+                        <input type="hidden" name="active_tab" value="jam_nyala">
+                        
+                        <div class="table-responsive">
+                            {{ jam_nyala_html|safe }}
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save"></i> Simpan Data Jam Nyala
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Konfirmasi sebelum simpan
+    $('form').on('submit', function(e) {
+        if (!confirm('Apakah Anda yakin ingin menyimpan perubahan data ini?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Auto-save indicator
+    let isModified = false;
+    $('select, textarea').on('change', function() {
+        isModified = true;
+    });
+
+    // Warn before leaving if modified
+    window.addEventListener('beforeunload', function (e) {
+        if (isModified) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Remove warning after form submit
+    $('form').on('submit', function() {
+        isModified = false;
+    });
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  const downloadBtn = document.getElementById("downloadExcelBtn");
+
+  downloadBtn.addEventListener("click", function() {
+    // Ambil tab aktif dari Bootstrap nav-tabs
+    const activeTab = document.querySelector(".nav-link.active");
+    let tabName = "";
+
+    if (activeTab) {
+      const text = activeTab.textContent.trim().toLowerCase();
+      if (text.includes("naik")) tabName = "naik";
+      else if (text.includes("turun")) tabName = "turun";
+      else if (text.includes("div") || text.includes("na")) tabName = "div";
+      else if (text.includes("dlpd")) tabName = "dlpd_3bln";
+      else if (text.includes("jam nyala")) tabName = "jam_nyala";
+    }
+
+    // Ambil parameter ULP dari URL (jika ada)
+    const params = new URLSearchParams(window.location.search);
+    const ulp = params.get("ulp") || "";
+
+    // Cegah download tanpa tab aktif
+    if (!tabName) {
+      alert("Tidak ada tab aktif yang terdeteksi.");
+      return;
+    }
+
+    // Redirect ke Flask route dengan parameter tab dan ulp
+    window.location.href = `/download_excel?tab=${tabName}&ulp=${ulp}`;
+  });
+});
+
+
+
+
+</script>
+
+<style>
+/* ===================== 🔹 STYLE SECTION 🔹 ===================== */
+
+/* 🔵 Warna biru lembut untuk kolom SAHLWBP */
+.sahlwbp-header {
+    background-color: #b3d1ff !important;
+    color: #003366 !important;
+    font-weight: bold;
+}
+.sahlwbp-cell-blue {
+    background-color: #d9e8ff !important;
+}
+.sahlwbp-cell-blue-positive {
+    background-color: #b3d1ff !important;
+}
+
+/* 🌿 Highlight baris saat diklik */
+.highlight {
+    background-color: #90EE90;
+    font-weight: bold;
+}
+
+/* Penegasan teks di kolom SAHLWBP */
+.sahlwbp-cell {
+    font-weight: bold;
+}
+</style>
+
+<!-- ===================== 🔹 SCRIPT LIBRARIES 🔹 ===================== -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.0/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- ===================== 🔹 SCRIPT FUNGSI CUSTOM 🔹 ===================== -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    /* -------------------- 🔸 Highlight Baris -------------------- */
+    document.querySelectorAll(".tab-pane table tbody tr").forEach(row => {
+        row.addEventListener("click", function() {
+            document.querySelectorAll(".tab-pane table tbody tr").forEach(r => r.classList.remove("highlight"));
+            this.classList.add("highlight");
+        });
+    });
+
+    /* -------------------- 🔸 Pewarnaan Kolom SAHLWBP -------------------- */
+    document.querySelectorAll(".tab-pane table").forEach(table => {
+        const ths = Array.from(table.querySelectorAll("thead th"));
+        const index = ths.findIndex(th => th.innerText.trim().toUpperCase() === "SAHLWBP");
+
+        if (index !== -1) {
+            ths[index].classList.add("sahlwbp-header");
+            table.querySelectorAll("tbody tr").forEach(row => {
+                const cell = row.cells[index];
+                if (cell) {
+                    const value = parseFloat(cell.innerText.replace(',', '.')) || 0;
+                    cell.classList.add(value > 0 ? "sahlwbp-cell-blue-positive" : "sahlwbp-cell-blue");
+                }
+            });
+        }
+    });
+
+    /* -------------------- 🔸 Simpan Tab Aktif di localStorage -------------------- */
+    function saveActiveTab(tabId) {
+        localStorage.setItem("activeTabId", tabId);
+    }
+
+    function setActiveTab() {
+        const savedTabId = localStorage.getItem("activeTabId");
+        if (savedTabId) {
+            const savedTabLink = document.querySelector(`.nav-link[href="${savedTabId}"]`);
+            const savedTabPane = document.querySelector(savedTabId);
+            if (savedTabLink && savedTabPane) {
+                document.querySelectorAll(".nav-link, .tab-pane").forEach(el => el.classList.remove("active", "show"));
+                savedTabLink.classList.add("active");
+                savedTabPane.classList.add("show", "active");
+            }
+        }
+    }
+
+    setActiveTab();
+    document.querySelectorAll(".nav-link").forEach(tabLink => {
+        tabLink.addEventListener("click", function() {
+            saveActiveTab(this.getAttribute("href"));
+        });
+    });
+
+    /* -------------------- 🔸 Sortir Kolom Tabel -------------------- */
+    document.querySelectorAll(".tab-pane table").forEach(table => {
+        table.querySelectorAll("thead th").forEach((th, index) => {
+            let ascending = true;
+            th.addEventListener("click", function() {
+                sortTable(table, index, ascending);
+                ascending = !ascending;
+            });
+        });
+    });
+
+    function sortTable(table, colIndex, ascending) {
+        const rows = Array.from(table.querySelectorAll("tbody tr"));
+        rows.sort((a, b) => {
+            let cellA = a.cells[colIndex].innerText.trim();
+            let cellB = b.cells[colIndex].innerText.trim();
+
+            if (cellA.endsWith('%') && cellB.endsWith('%')) {
+                cellA = parseFloat(cellA.replace('%', ''));
+                cellB = parseFloat(cellB.replace('%', ''));
+            } else if (!isNaN(cellA) && !isNaN(cellB)) {
+                cellA = parseFloat(cellA);
+                cellB = parseFloat(cellB);
+            }
+
+            return ascending ? cellA - cellB : cellB - cellA;
+        });
+        rows.forEach(row => table.querySelector("tbody").appendChild(row));
+    }
+
+    /* -------------------- 🔸 Auto-Save Dropdown dan Textarea -------------------- */
+    const columnMap = {
+        "hasil_pemeriksaan": "HASIL PEMERIKSAAN",
+        "tindak_lanjut": "TINDAK LANJUT",
+        "keterangan": "KETERANGAN"
+    };
+
+    function autoSave(idpel, columnFriendly, value, table) {
+        if (!idpel || !columnFriendly || !table) return;
+        const columnDB = columnMap[columnFriendly];
+        fetch('/update_data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ IDPEL: idpel, column: columnDB, value: value, table: table })
+        });
+    }
+
+    document.querySelectorAll("select[data-column]").forEach(sel => {
+        sel.addEventListener("change", function() {
+            const row = this.closest("tr");
+            autoSave(row.dataset.idpel, this.dataset.column, this.value, row.dataset.table);
+        });
+    });
+
+    document.querySelectorAll("textarea[data-column]").forEach(ta => {
+        ta.addEventListener("input", function() {
+            const row = this.closest("tr");
+            autoSave(row.dataset.idpel, this.dataset.column, this.value, row.dataset.table);
+        });
+    });
+});
+
+/* -------------------- 🔸 Fungsi Buka 3 Foto -------------------- */
+function open3Foto(idpel, blthKini) {
+    const path = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    function getPreviousBlth(blth) {
+        let year = parseInt(blth.substring(0, 4));
+        let month = parseInt(blth.substring(4, 6)) - 1;
+        if (month === 0) { month = 12; year -= 1; }
+        return year.toString() + (month < 10 ? '0' + month : month);
+    }
+
+    const blthLalu = getPreviousBlth(blthKini);
+    const blthLalu2 = getPreviousBlth(blthLalu);
+    const width = 300, height = 1000, spacing = 10;
+    const left1 = 10, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+
+    window.open(`${path}${idpel}&blth=${blthKini}`, '_foto1', `width=${width},height=${height},top=10,left=${left1},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu}`, '_foto2', `width=${width},height=${height},top=10,left=${left2},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu2}`, '_foto3', `width=${width},height=${height},top=10,left=${left3},resizable=yes`);
+}
+
+/* -------------------- 🔸 Konfirmasi Hapus Data -------------------- */
+function confirmClearTableData(tabId) {
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Data yang dihapus tidak bisa dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/delete_data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ table: tabId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    Swal.fire('Berhasil!', 'Semua data berhasil dihapus.', 'success')
+                        .then(() => location.reload());
+                } else if (data.error) {
+                    Swal.fire('Gagal!', `Gagal menghapus data: ${data.error}`, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Terjadi kesalahan!', 'Tidak dapat menghubungi server.', 'error'));
+        }
+    });
+}
+
+/* -------------------- 🔸 Konfirmasi Logout -------------------- */
+function confirmLogout() {
+    Swal.fire({
+        title: 'Anda yakin ingin logout?',
+        text: "Setelah logout, Anda harus login kembali!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Logout',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = "{{ url_for('logout') }}";
+        }
+    });
+}
+</script>
+
+{% endblock %}
