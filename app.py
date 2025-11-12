@@ -27,6 +27,11 @@ from flask import Flask, request, send_file, jsonify, session, render_template
 from sqlalchemy import create_engine, text
 from openpyxl.styles import Font, PatternFill
 
+# app.py
+from monitoring import monitoring_bp
+
+
+
 def get_db_connection():
     return mysql.connector.connect(
         host='localhost',
@@ -49,6 +54,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
+
+app.register_blueprint(monitoring_bp)
 
 # Upload folder
 UPLOAD_FOLDER = 'uploads'
@@ -368,6 +375,679 @@ def save_dpm_with_upsert(df, engine):
 
 
 
+# #dataframe utama
+# def process_billing_advanced(blth_kini, unitup, engine):
+#     """🔄 Process billing dengan perhitungan KWH antar bulan otomatis"""
+#     try:
+#         logger.info(f"🚀 Processing billing for UNITUP: {unitup}, BLTH: {blth_kini}")
+
+#         # --- Normalisasi Periode ---
+#         blth_kini = normalize_blth(blth_kini)
+#         blth_lalu = get_previous_blth(blth_kini, 1)
+#         blth_lalulalu = get_previous_blth(blth_kini, 2)
+#         blth_lalu3 = get_previous_blth(blth_kini, 3)
+
+#         # --- Ambil Data dari DPM ---
+#         # ✅ Handle UP3 filter (semua UNITUP dengan suffix _up3)
+#         if unitup == '_up3':
+#             query = text("""
+#                 SELECT * FROM dpm 
+#                 WHERE UNITUP LIKE '%_up3'
+#                 AND BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
+#                 ORDER BY UNITUP, IDPEL
+#             """)
+#             df_all = pd.read_sql(query, engine, params={
+#                 'kini': blth_kini,
+#                 'lalu': blth_lalu,
+#                 'lalulalu': blth_lalulalu,
+#                 'lalu3': blth_lalu3
+#             })
+#             logger.info(f"✅ UP3 mode: Found {len(df_all)} records from all _up3 units")
+        
+#         # ✅ Handle ULP filter (UNITUP spesifik)
+#         elif unitup:
+#             query = text("""
+#                 SELECT * FROM dpm 
+#                 WHERE UNITUP = :unitup 
+#                 AND BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
+#                 ORDER BY IDPEL
+#             """)
+#             df_all = pd.read_sql(query, engine, params={
+#                 'unitup': unitup,
+#                 'kini': blth_kini,
+#                 'lalu': blth_lalu,
+#                 'lalulalu': blth_lalulalu,
+#                 'lalu3': blth_lalu3
+#             })
+#             logger.info(f"✅ ULP mode: Found {len(df_all)} records for UNITUP {unitup}")
+        
+#         # ✅ Fallback: ambil semua (bila diperlukan)
+#         else:
+#             query = text("""
+#                 SELECT * FROM dpm 
+#                 WHERE BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
+#                 ORDER BY UNITUP, IDPEL
+#             """)
+#             df_all = pd.read_sql(query, engine, params={
+#                 'kini': blth_kini,
+#                 'lalu': blth_lalu,
+#                 'lalulalu': blth_lalulalu,
+#                 'lalu3': blth_lalu3
+#             })
+#             logger.info(f"✅ All mode: Found {len(df_all)} records")
+
+#         if df_all.empty:
+#             return pd.DataFrame(), "Tidak ada data DPM untuk periode ini"
+
+#         # --- Kolom Wajib ---
+#         kolom_wajib = ['IDPEL','NAMA','TARIF','DAYA','KDKELOMPOK','SLALWBP','LWBPCABUT','LWBPPASANG','SAHLWBP','LWBPPAKAI']
+#         for kolom in kolom_wajib:
+#             if kolom not in df_all.columns:
+#                 df_all[kolom] = 0
+
+#         # --- Pisah Data per Bulan ---
+#         df_kini = df_all[df_all['BLTH'] == blth_kini].copy()
+#         df_lalu = df_all[df_all['BLTH'] == blth_lalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Y'})
+#         df_lalulalu = df_all[df_all['BLTH'] == blth_lalulalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_X'})
+#         df_lalu3 = df_all[df_all['BLTH'] == blth_lalu3][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Z'})
+
+#         # --- Merge Semua Periode ---
+#         df_merged = (
+#             df_kini
+#             .merge(df_lalu, on='IDPEL', how='left')
+#             .merge(df_lalulalu, on='IDPEL', how='left')
+#             .merge(df_lalu3, on='IDPEL', how='left')
+#         )
+
+#         # --- 🔹 Pastikan semua kolom input ada ---
+#         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
+#             if kol not in df_merged.columns:
+#                 df_merged[kol] = 0
+
+#         # --- 🔹 Konversi ke numerik ---
+#         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
+#             df_merged[kol] = pd.to_numeric(df_merged[kol], errors='coerce')
+
+#         # --- 🔹 Hitung ulang LWBPPAKAI (jika 0 ATAU NaN) ---
+#         rumus_lwbp = (
+#             df_merged['LWBPCABUT'].fillna(0)
+#             - df_merged['SLALWBP'].fillna(0)
+#             + df_merged['SAHLWBP'].fillna(0)
+#             - df_merged['LWBPPASANG'].fillna(0)
+#         )
+
+#         # Buat mask nilai kosong (NaN atau 0)
+#         mask_kosong = df_merged['LWBPPAKAI'].isna() | (df_merged['LWBPPAKAI'] == 0)
+
+#         # Tulis hasil hitungan hanya untuk yang kosong
+#         df_merged.loc[mask_kosong, 'LWBPPAKAI'] = rumus_lwbp.loc[mask_kosong]
+
+#         # --- 🔹 Pastikan hasil valid ---
+#         df_merged['LWBPPAKAI'] = df_merged['LWBPPAKAI'].fillna(0).clip(lower=0)
+
+#         # --- 🔹 Debug sementara ---
+#         logger.info(
+#             f"🔧 LWBPPAKAI dihitung ulang untuk {mask_kosong.sum()} baris kosong. "
+#             f"Contoh hasil: {df_merged['LWBPPAKAI'].head(5).tolist()}"
+#         )
+
+#         # --- Siapkan Kolom KWH ---
+#         df_merged['KWH SEKARANG'] = df_merged['LWBPPAKAI'].fillna(0).astype(int)
+#         df_merged['KWH 1 BULAN LALU'] = df_merged['LWBPPAKAI_Y'].fillna(0).astype(int)
+#         df_merged['KWH 2 BULAN LALU'] = df_merged['LWBPPAKAI_X'].fillna(0).astype(int)
+
+#         # --- Delta & Persen ---
+#         delta = df_merged['KWH SEKARANG'] - df_merged['KWH 1 BULAN LALU']
+#         with np.errstate(divide='ignore', invalid='ignore'):
+#             percentage = (delta / df_merged['KWH 1 BULAN LALU'].replace(0, np.nan)) * 100
+#             percentage = np.nan_to_num(percentage, nan=0)
+
+#         # --- Hitung Jam Nyala ---
+#         daya_kw = df_merged['DAYA'].replace(0, np.nan) / 1000
+#         jam_nyala = (df_merged['KWH SEKARANG'] / daya_kw).replace([np.inf, -np.inf], 0).fillna(0)
+
+#         # --- Tambahkan JAMNYALA600 (kategori 600Up / 600Down) ---
+#         df_merged['JAM_NYALA'] = jam_nyala.round(1)
+#         df_merged['JAMNYALA600'] = np.select(
+#             [jam_nyala > 600, jam_nyala <= 600],
+#             ['600Up', '600Down'],
+#             default='UNKNOWN'
+#         )
+
+#         # --- Hitung Rata-rata 3 Bulan ---
+#         rerata_3bulan = df_merged[['KWH 1 BULAN LALU','KWH 2 BULAN LALU','LWBPPAKAI_Z']].fillna(0).mean(axis=1)
+
+#         # --- Hitung DLPD_HITUNG ---
+#         def label_dlpd(row):
+#             now = row['KWH SEKARANG']
+#             avg = row['rerata_3bulan']
+#             if avg == 0:
+#                 return "DIV/NA"
+#             ratio = (now / avg) * 100
+#             if ratio >= 150:
+#                 return "NAIK_50%UP"
+#             elif 140 <= ratio < 150:
+#                 return "NAIK_40_50"
+#             elif ratio <= 50:
+#                 return "TURUN_50%DOWN"
+#             elif 50 < ratio <= 60:
+#                 return "TURUN_40_50"
+#             else:
+#                 return "AMAN"
+
+#         df_merged['rerata_3bulan'] = rerata_3bulan
+#         df_merged['DLPD_HITUNG'] = df_merged.apply(label_dlpd, axis=1)
+
+#         # --- Hitung DLPD 3BLN ---
+#         df_merged['DLPD_3BLN'] = np.where(
+#             (df_merged['KWH SEKARANG'] > 1.5 * rerata_3bulan),
+#             'Naik50% R3BLN',
+#             'Turun=50% R3BLN'
+#         )
+
+#         # --- Klasifikasi KET ---
+#         is_na = df_merged['KWH 1 BULAN LALU'] == 0
+#         is_naik = (~is_na) & (percentage >= 40)
+#         is_turun = (~is_na) & (percentage <= -40)
+#         ket = np.select([is_na, is_naik, is_turun], ['DIV/NA','NAIK','TURUN'], default='AMAN')
+
+#         # --- ✅ Ambil UNITUP dari df_merged (untuk support UP3 multi-unit) ---
+#         df_merged['UNITUP'] = df_merged['UNITUP'].fillna('UNKNOWN')
+
+#         # --- Bangun DataFrame Akhir ---
+#         kroscek = pd.DataFrame({
+#             'BLTH': blth_kini,
+#             'UNITUP': df_merged['UNITUP'],  # ✅ Gunakan UNITUP dari data, bukan parameter
+#             'IDPEL': df_merged['IDPEL'],
+#             'NAMA': df_merged['NAMA'],
+#             'TARIF': df_merged['TARIF'],
+#             'DAYA': df_merged['DAYA'].fillna(0).astype(int),
+#             'KDKELOMPOK': df_merged['KDKELOMPOK'],
+#             'SLALWBP': df_merged['SLALWBP'].fillna(0).astype(int),
+#             'LWBPCABUT': df_merged['LWBPCABUT'].fillna(0).astype(int),
+#             'SELISIH_STAN_BONGKAR': (df_merged['SLALWBP'] - df_merged['LWBPCABUT']).fillna(0).astype(int),
+#             'LWBPPASANG': df_merged['LWBPPASANG'].fillna(0).astype(int),
+#             'SAHLWBP': df_merged['SAHLWBP'].fillna(0).astype(int),
+#             'KWH_SEKARANG': df_merged['LWBPPAKAI'].fillna(0).astype(int),
+#             'KWH_1_BULAN_LALU': df_merged['LWBPPAKAI_Y'].fillna(0).astype(int),
+#             'KWH_2_BULAN_LALU': df_merged['LWBPPAKAI_X'].fillna(0).astype(int),
+#             'DELTA_PEMKWH': delta.fillna(0).astype(int),
+#             'PERSEN': pd.Series(percentage).round(1).astype(str) + '%',
+#             'KET': ket,
+#             'JAM_NYALA': df_merged['JAM_NYALA'],
+#             'JAMNYALA600': df_merged['JAMNYALA600'],
+#             'DLPD': df_merged.get('DLPD', ''),
+#             'DLPD_HITUNG': df_merged['DLPD_HITUNG'],
+#             'DLPD_3BLN': df_merged['DLPD_3BLN'],
+#             'NOMORKWH': '',
+#             'HASIL_PEMERIKSAAN': '',
+#             'TINDAK_LANJUT': '',
+#             'MARKING_KOREKSI': 0
+#         })
+
+#         # --- Foto & Grafik ---
+#         path_foto1 = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel="
+#         path_foto2 = "&blth="
+
+#         # =================== FOTO AKHIR ===================
+#         kroscek["FOTO_AKHIR"] = kroscek["IDPEL"].apply(
+#             lambda x: f"""
+#                 <button class='btn btn-sm btn-success'
+#                         onclick="window.open('{path_foto1}{x}{path_foto2}{blth_kini}', 
+#                                             'popup', 
+#                                             'width=700,height=700,scrollbars=no,toolbar=no'); 
+#                                 return false;">
+#                     <i class='bi bi-image'></i> Foto Akhir
+#                 </button>
+#             """
+#         )
+
+#         # =================== FOTO LALU ===================
+#         kroscek["FOTO_LALU"] = kroscek["IDPEL"].apply(
+#             lambda x: f"""
+#                 <button class='btn btn-sm btn-warning'
+#                         onclick="window.open('{path_foto1}{x}{path_foto2}{blth_lalu}', 
+#                                             'popup', 
+#                                             'width=700,height=700,scrollbars=no,toolbar=no'); 
+#                                 return false;">
+#                     <i class='bi bi-image'></i> Foto Lalu
+#                 </button>
+#             """
+#         )
+
+#         # =================== FOTO LALU 2 ===================
+#         kroscek["FOTO_LALU2"] = kroscek["IDPEL"].apply(
+#             lambda x: f"""
+#                 <button class='btn btn-sm btn-secondary'
+#                         onclick="window.open('{path_foto1}{x}{path_foto2}{blth_lalulalu}', 
+#                                             'popup', 
+#                                             'width=700,height=700,scrollbars=no,toolbar=no'); 
+#                                 return false;">
+#                     <i class='bi bi-image'></i> Foto 2 Lalu
+#                 </button>
+#             """
+#         )
+
+#         # =================== FOTO 3 BULAN (Gabungan) ===================
+#         # ✅ Gunakan UNITUP dari masing-masing row untuk link grafik
+#         def create_foto3bln(row):
+#             return f"""
+#                 <button class='btn btn-sm btn-primary' 
+#                         onclick="open3Foto('{row['IDPEL']}', '{blth_kini}'); return false;">
+#                     <i class='bi bi-images'></i> {str(row['IDPEL'])[-5:]}
+#                 </button>
+#             """
+        
+#         kroscek["FOTO_3BLN"] = kroscek.apply(create_foto3bln, axis=1)
+
+#         # =================== GRAFIK ===================
+#         # ✅ Gunakan UNITUP dari masing-masing row untuk link grafik
+#         def create_grafik_link(row):
+#             return f'<a href="/grafik/{row["IDPEL"]}?blth={blth_kini}&ulp={row["UNITUP"]}" target="_blank">GRAFIK</a>'
+        
+#         kroscek["GRAFIK"] = kroscek.apply(create_grafik_link, axis=1)
+
+#         logger.info(f"✅ Billing processed successfully: {len(kroscek)} records")
+        
+#         # ✅ Log summary per UNITUP jika mode UP3
+#         if unitup == '_up3':
+#             unitup_counts = kroscek['UNITUP'].value_counts()
+#             logger.info(f"📊 Summary per UNITUP:")
+#             for unit, count in unitup_counts.items():
+#                 logger.info(f"   {unit}: {count} records")
+        
+#         return kroscek, None
+
+#     except Exception as e:
+#         error_msg = f"Error processing billing: {str(e)}"
+#         logger.error(error_msg)
+#         logger.error(traceback.format_exc())
+#         return pd.DataFrame(), error_msg
+# Tambahkan fungsi ini di bagian atas file app.py (sebelum fungsi process_billing_advanced)
+
+def process_dpm(df):
+    """
+    Proses dataframe untuk format DPM table
+    Fungsi ini memvalidasi dan membersihkan data sebelum disimpan ke DPM
+    """
+    try:
+        if df.empty:
+            logger.warning("process_dpm: DataFrame kosong")
+            return pd.DataFrame()
+        
+        # Pastikan kolom yang diperlukan ada
+        required_cols = ['BLTH', 'IDPEL', 'LWBPPAKAI']
+        for col in required_cols:
+            if col not in df.columns:
+                logger.error(f"process_dpm: Kolom {col} tidak ditemukan")
+                df[col] = 0 if col == 'LWBPPAKAI' else ''
+        
+        # Buat copy untuk menghindari SettingWithCopyWarning
+        df_clean = df[required_cols].copy()
+        
+        # Normalisasi IDPEL
+        df_clean['IDPEL'] = df_clean['IDPEL'].astype(str).str.strip().str.lower()
+        
+        # Pastikan LWBPPAKAI numerik dan tidak negatif
+        df_clean['LWBPPAKAI'] = pd.to_numeric(df_clean['LWBPPAKAI'], errors='coerce').fillna(0)
+        df_clean['LWBPPAKAI'] = df_clean['LWBPPAKAI'].clip(lower=0)  # Tidak boleh negatif
+        
+        # Pastikan BLTH dalam format yang benar
+        df_clean['BLTH'] = df_clean['BLTH'].astype(str)
+        
+        logger.info(f"process_dpm: Berhasil memproses {len(df_clean)} records")
+        return df_clean
+    
+    except Exception as e:
+        logger.error(f"Error in process_dpm: {str(e)}")
+        logger.error(traceback.format_exc())
+        return pd.DataFrame()
+
+
+def update_dpm_table(df, dpm_table):
+    """
+    Update DPM table dengan data dari dataframe
+    Menggunakan INSERT ... ON DUPLICATE KEY UPDATE untuk handle insert/update
+    """
+    try:
+        if df.empty:
+            logger.warning("update_dpm_table: DataFrame kosong")
+            return {'inserted_or_updated': 0, 'message': 'DataFrame kosong'}
+        
+        inserted_or_updated = 0
+        failed = 0
+        
+        # Validasi nama tabel untuk keamanan
+        if not dpm_table or not isinstance(dpm_table, str):
+            logger.error(f"update_dpm_table: Nama tabel tidak valid: {dpm_table}")
+            return {'inserted_or_updated': 0, 'message': 'Nama tabel tidak valid'}
+        
+        with engine.begin() as conn:
+            for _, row in df.iterrows():
+                try:
+                    sql = text(f"""
+                        INSERT INTO {dpm_table} (BLTH, IDPEL, LWBPPAKAI)
+                        VALUES (:blth, :idpel, :lwbppakai)
+                        ON DUPLICATE KEY UPDATE 
+                            LWBPPAKAI = VALUES(LWBPPAKAI)
+                    """)
+                    
+                    conn.execute(sql, {
+                        'blth': row['BLTH'],
+                        'idpel': row['IDPEL'],
+                        'lwbppakai': int(row['LWBPPAKAI'])
+                    })
+                    inserted_or_updated += 1
+                    
+                except Exception as e:
+                    failed += 1
+                    if failed <= 5:  # Log hanya 5 error pertama untuk menghindari spam
+                        logger.error(f"Error updating IDPEL {row['IDPEL']}: {e}")
+                    continue
+        
+        logger.info(f"update_dpm_table: Berhasil {inserted_or_updated}, Gagal {failed}")
+        
+        return {
+            'inserted_or_updated': inserted_or_updated,
+            'failed': failed,
+            'message': f'Berhasil update {inserted_or_updated} records, gagal {failed} records'
+        }
+    
+    except Exception as e:
+        error_msg = f"Error in update_dpm_table: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        return {'inserted_or_updated': 0, 'failed': len(df), 'message': error_msg}
+
+
+
+
+# #dataframe utama
+# def process_billing_advanced(blth_kini, unitup, engine):
+#     """🔄 Process billing dengan perhitungan KWH antar bulan otomatis"""
+#     try:
+#         logger.info(f"🚀 Processing billing for UNITUP: {unitup}, BLTH: {blth_kini}")
+
+#         # --- Normalisasi Periode ---
+#         blth_kini = normalize_blth(blth_kini)
+#         blth_lalu = get_previous_blth(blth_kini, 1)
+#         blth_lalulalu = get_previous_blth(blth_kini, 2)
+#         blth_lalu3 = get_previous_blth(blth_kini, 3)
+
+#         # --- Ambil Data dari DPM ---
+#         # ✅ Handle ULP filter (UNITUP spesifik)
+#         if unitup:
+#             query = text("""
+#                 SELECT * FROM dpm 
+#                 WHERE UNITUP = :unitup 
+#                 AND BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
+#                 ORDER BY IDPEL
+#             """)
+#             df_all = pd.read_sql(query, engine, params={
+#                 'unitup': unitup,
+#                 'kini': blth_kini,
+#                 'lalu': blth_lalu,
+#                 'lalulalu': blth_lalulalu,
+#                 'lalu3': blth_lalu3
+#             })
+#             logger.info(f"✅ ULP mode: Found {len(df_all)} records for UNITUP {unitup}")
+        
+#         # ✅ Fallback: ambil semua (bila diperlukan)
+#         else:
+#             query = text("""
+#                 SELECT * FROM dpm 
+#                 WHERE BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
+#                 ORDER BY UNITUP, IDPEL
+#             """)
+#             df_all = pd.read_sql(query, engine, params={
+#                 'kini': blth_kini,
+#                 'lalu': blth_lalu,
+#                 'lalulalu': blth_lalulalu,
+#                 'lalu3': blth_lalu3
+#             })
+#             logger.info(f"✅ All mode: Found {len(df_all)} records")
+
+#         if df_all.empty:
+#             return pd.DataFrame(), "Tidak ada data DPM untuk periode ini"
+
+#         # --- Kolom Wajib ---
+#         kolom_wajib = ['IDPEL','NAMA','TARIF','DAYA','KDKELOMPOK','SLALWBP','LWBPCABUT','LWBPPASANG','SAHLWBP','LWBPPAKAI','DLPD']
+#         for kolom in kolom_wajib:
+#             if kolom not in df_all.columns:
+#                 df_all[kolom] = 0 if kolom != 'DLPD' else ''
+
+#         # --- Pisah Data per Bulan ---
+#         df_kini = df_all[df_all['BLTH'] == blth_kini].copy()
+#         df_lalu = df_all[df_all['BLTH'] == blth_lalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Y'})
+#         df_lalulalu = df_all[df_all['BLTH'] == blth_lalulalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_X'})
+#         df_lalu3 = df_all[df_all['BLTH'] == blth_lalu3][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Z'})
+
+#         # --- 🔹 PENGECEKAN DUPLIKASI (dari Kode 1) ---
+#         duplikat_lalu3 = df_lalu3['IDPEL'].duplicated().sum()
+#         duplikat_lalulalu = df_lalulalu['IDPEL'].duplicated().sum()
+#         duplikat_lalu = df_lalu['IDPEL'].duplicated().sum()
+#         duplikat_kini = df_kini['IDPEL'].duplicated().sum()
+
+#         logger.info(f"Duplikat di df_lalu3: {duplikat_lalu3}")
+#         logger.info(f"Duplikat di df_lalulalu: {duplikat_lalulalu}")
+#         logger.info(f"Duplikat di df_lalu: {duplikat_lalu}")
+#         logger.info(f"Duplikat di df_kini: {duplikat_kini}")
+
+#         if duplikat_lalu3 > 0:
+#             flash(f"⚠️ Ditemukan {duplikat_lalu3} IDPEL duplikat di DPM N - 3.", "warning")
+#         if duplikat_lalulalu > 0:
+#             flash(f"⚠️ Ditemukan {duplikat_lalulalu} IDPEL duplikat di DPM N - 2.", "warning")
+#         if duplikat_lalu > 0:
+#             flash(f"⚠️ Ditemukan {duplikat_lalu} IDPEL duplikat di DPM N - 1.", "warning")
+#         if duplikat_kini > 0:
+#             flash(f"⚠️ Ditemukan {duplikat_kini} IDPEL duplikat di DPM bulan N.", "warning")
+
+#         # --- Merge Semua Periode ---
+#         df_merged = (
+#             df_kini
+#             .merge(df_lalu, on='IDPEL', how='left')
+#             .merge(df_lalulalu, on='IDPEL', how='left')
+#             .merge(df_lalu3, on='IDPEL', how='left')
+#         )
+
+#         logger.info(f"Duplikat setelah merge: {df_merged['IDPEL'].duplicated().sum()}")
+
+#         # --- 🔹 Pastikan semua kolom input ada ---
+#         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
+#             if kol not in df_merged.columns:
+#                 df_merged[kol] = 0
+
+#         # --- 🔹 Konversi ke numerik ---
+#         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
+#             df_merged[kol] = pd.to_numeric(df_merged[kol], errors='coerce')
+
+#         # --- 🔹 PERHITUNGAN LWBPPAKAI (dari Kode 1) - Hanya jika kosong ---
+#         lwbp_kosong = df_merged['LWBPPAKAI'].isna()
+#         count_replaced = lwbp_kosong.sum()
+#         logger.info(f"Jumlah data LWBPPAKAI yang dihitung ulang: {count_replaced}")
+
+#         # Isi nilai hanya kalau kosong
+#         df_merged['LWBPPAKAI'] = np.where(
+#             lwbp_kosong,
+#             (df_merged['LWBPCABUT'].fillna(0)
+#             - df_merged['SLALWBP'].fillna(0)
+#             + df_merged['SAHLWBP'].fillna(0)
+#             - df_merged['LWBPPASANG'].fillna(0)),
+#             df_merged['LWBPPAKAI']
+#         )
+
+#         # --- Siapkan Kolom KWH ---
+#         df_merged['KWH SEKARANG'] = df_merged['LWBPPAKAI'].fillna(0).astype(int)
+#         df_merged['KWH 1 BULAN LALU'] = df_merged['LWBPPAKAI_Y'].fillna(0).astype(int)
+#         df_merged['KWH 2 BULAN LALU'] = df_merged['LWBPPAKAI_X'].fillna(0).astype(int)
+
+#         # --- Delta & Persen ---
+#         delta = df_merged['KWH SEKARANG'] - df_merged['KWH 1 BULAN LALU']
+#         with np.errstate(divide='ignore', invalid='ignore'):
+#             percentage = (delta / df_merged['KWH 1 BULAN LALU'].replace(0, np.nan)) * 100
+#             percentage = np.nan_to_num(percentage, nan=0)
+
+#         # --- Hitung Jam Nyala ---
+#         daya_kw = df_merged['DAYA'].replace(0, np.nan) / 1000
+#         jam_nyala = (df_merged['KWH SEKARANG'] / daya_kw).replace([np.inf, -np.inf], 0).fillna(0)
+
+#         # --- Hitung Rata-rata 3 Bulan ---
+#         rerata = df_merged[['LWBPPAKAI_Y','LWBPPAKAI_X','LWBPPAKAI_Z']].fillna(0).mean(axis=1)
+
+#         # --- 🔹 KLASIFIKASI DLPD_HITUNG (dari Kode 1) ---
+#         # Kondisi stan mundur
+#         stan_mundur_condition = (
+#             (df_merged['SAHLWBP'] < df_merged['SLALWBP']) &
+#             (df_merged['LWBPCABUT'].fillna(0) == 0) &
+#             (df_merged['LWBPPASANG'].fillna(0) == 0)
+#         )
+
+#         # Kondisi cek pecahan (ada nilai cabut atau pasang)
+#         cek_pecahan_condition = (
+#             (df_merged['LWBPCABUT'].fillna(0) != 0) |
+#             (df_merged['LWBPPASANG'].fillna(0) != 0)
+#         )
+
+#         sortir_naik = 40
+#         sortir_turun = 40
+#         is_na = df_merged['LWBPPAKAI_Y'].isna() | (df_merged['LWBPPAKAI_Y'] == 0)
+#         is_naik = (~is_na) & (percentage >= sortir_naik)
+#         is_turun = (~is_na) & (percentage <= -sortir_turun)
+        
+#         # Daftar kondisi dan klasifikasi
+#         conditions = [
+#             (jam_nyala >= 720),
+#             cek_pecahan_condition,
+#             stan_mundur_condition,
+#             (percentage > 50),
+#             (is_na & (jam_nyala > 40)), 
+#             (percentage < -50),
+#             (df_merged['LWBPPAKAI'] == 0),
+#             (jam_nyala > 0) & (jam_nyala < 40)
+#         ]
+
+#         choices = [
+#             'JN>720',
+#             'PECAHAN',
+#             'STAN MUNDUR',
+#             'NAIK>50%',
+#             'DIV/NA',
+#             'TURUN<50%',
+#             'KWH NOL',
+#             'JN<40'
+#         ]
+        
+#         # Terapkan ke kolom baru
+#         df_merged['DLPD_HITUNG'] = np.select(conditions, choices, default='')
+
+#         # --- Hitung DLPD 3BLN ---
+#         df_merged['DLPD_3BLN'] = np.where(
+#             (df_merged['KWH SEKARANG'] > 1.5 * rerata),
+#             'Naik50% R3BLN',
+#             'Turun=50% R3BLN'
+#         )
+
+#         # --- 🔹 UPDATE DPM TABLE (dari Kode 1) ---
+#         processed_df = process_dpm(df_merged[['BLTH', 'IDPEL', 'LWBPPAKAI']])
+#         result = update_dpm_table(processed_df, f'dpm_{unitup}' if unitup else 'dpm')
+
+#         if result['inserted_or_updated'] > 0:
+#             flash(f"DPM: Sukses upload {result['inserted_or_updated']} data ke tabel DPM", 'success')
+
+#         # --- Klasifikasi KET ---
+#         is_na = df_merged['KWH 1 BULAN LALU'] == 0
+#         is_naik = (~is_na) & (percentage >= 40)
+#         is_turun = (~is_na) & (percentage <= -40)
+#         ket = np.select([is_na, is_naik, is_turun], ['DIV/NA','NAIK','TURUN'], default='AMAN')
+
+#         # --- Tambahkan JAMNYALA600 ---
+#         df_merged['JAMNYALA600'] = np.select(
+#             [jam_nyala > 600, jam_nyala <= 600],
+#             ['600Up', '600Down'],
+#             default='UNKNOWN'
+#         )
+
+#         # --- Ambil UNITUP dari df_merged ---
+#         df_merged['UNITUP'] = df_merged['UNITUP'].fillna(unitup if unitup else 'UNKNOWN')
+
+#         # --- Bangun DataFrame Akhir (nama kolom dengan spasi seperti Kode 1) ---
+#         kroscek = pd.DataFrame({
+#             'BLTH': blth_kini,
+#             'UNITUP': df_merged['UNITUP'],
+#             'IDPEL': df_merged['IDPEL'].astype(str).str.strip().str.lower(),
+#             'NAMA': df_merged['NAMA'],
+#             'TARIF': df_merged['TARIF'],
+#             'DAYA': df_merged['DAYA'].fillna(0).astype(int),
+#             'KDKELOMPOK': df_merged['KDKELOMPOK'].fillna(''),
+#             'SLALWBP': df_merged['SLALWBP'].fillna(0).astype(int),
+#             'LWBPCABUT': df_merged['LWBPCABUT'].fillna(0).astype(int),
+#             'SELISIH STAN BONGKAR': (df_merged['SLALWBP'] - df_merged['LWBPCABUT']).fillna(0).astype(int),
+#             'LWBP PASANG': df_merged['LWBPPASANG'].fillna(0).astype(int),
+#             'SAHLWBP': df_merged['SAHLWBP'].fillna(0).astype(int),
+#             'KWH SEKARANG': df_merged['LWBPPAKAI'].fillna(0).astype(int),
+#             'KWH 1 BULAN LALU': df_merged['LWBPPAKAI_Y'].fillna(0).astype(int),
+#             'KWH 2 BULAN LALU': df_merged['LWBPPAKAI_X'].fillna(0).astype(int),
+#             'DELTA PEMKWH': delta.fillna(0).astype(int),
+#             '%': pd.Series(percentage).round(1).astype(str) + '%',
+#             'KET': ket,
+#             'JAM NYALA': jam_nyala.round(1),
+#             'JAMNYALA600': df_merged['JAMNYALA600'],
+#             'DLPD': df_merged['DLPD'].fillna(''),
+#             'DLPD_HITUNG': df_merged['DLPD_HITUNG'],
+#             'DLPD_3BLN': df_merged['DLPD_3BLN'],
+#             'NOMET': '',
+#             'HASIL PEMERIKSAAN': '',
+#             'TINDAK LANJUT': ''
+#         })
+
+#         # --- Hapus duplikasi (dari Kode 1) ---
+#         kroscek = kroscek.drop_duplicates(subset='IDPEL', keep='first')
+
+#         # --- Foto & Grafik ---
+#         path_foto1 = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel="
+#         path_foto2 = "&blth="
+
+#         # Link foto seperti Kode 1 (HTML sederhana, bukan button)
+#         kroscek['FOTO AKHIR'] = kroscek['IDPEL'].apply(
+#             lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_kini}" target="popup" '
+#                       f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_kini}\', \'popup\', '
+#                       f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
+#         )
+        
+#         kroscek['FOTO LALU'] = kroscek['IDPEL'].apply(
+#             lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalu}" target="popup" '
+#                       f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalu}\', \'popup\', '
+#                       f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
+#         )
+        
+#         kroscek['FOTO LALU2'] = kroscek['IDPEL'].apply(
+#             lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalulalu}" target="popup" '
+#                       f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalulalu}\', \'popup\', '
+#                       f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
+#         )
+
+#         # Link 3 foto sekaligus, pakai 5 digit terakhir IDPEL sebagai label link
+#         kroscek['FOTO 3BLN'] = kroscek['IDPEL'].apply(
+#             lambda x: f'<a href="#" onclick="open3Foto(\'{x}\', \'{blth_kini}\'); return false;">{str(x)[-5:]}</a>'
+#         )
+
+#         # Grafik link
+#         kroscek['GRAFIK'] = kroscek.apply(
+#             lambda row: f'<a href="/grafik/{row["IDPEL"]}?blth={blth_kini}&ulp={row["UNITUP"]}" target="_blank">LIHAT GRAFIK</a>',
+#             axis=1
+#         )
+
+#         logger.info(f"✅ Billing processed successfully: {len(kroscek)} records")
+        
+#         return kroscek, None
+
+#     except Exception as e:
+#         error_msg = f"Error processing billing: {str(e)}"
+#         logger.error(error_msg)
+#         logger.error(traceback.format_exc())
+#         return pd.DataFrame(), error_msg
+
+
 #dataframe utama
 def process_billing_advanced(blth_kini, unitup, engine):
     """🔄 Process billing dengan perhitungan KWH antar bulan otomatis"""
@@ -381,24 +1061,8 @@ def process_billing_advanced(blth_kini, unitup, engine):
         blth_lalu3 = get_previous_blth(blth_kini, 3)
 
         # --- Ambil Data dari DPM ---
-        # ✅ Handle UP3 filter (semua UNITUP dengan suffix _up3)
-        if unitup == '_up3':
-            query = text("""
-                SELECT * FROM dpm 
-                WHERE UNITUP LIKE '%_up3'
-                AND BLTH IN (:kini, :lalu, :lalulalu, :lalu3)
-                ORDER BY UNITUP, IDPEL
-            """)
-            df_all = pd.read_sql(query, engine, params={
-                'kini': blth_kini,
-                'lalu': blth_lalu,
-                'lalulalu': blth_lalulalu,
-                'lalu3': blth_lalu3
-            })
-            logger.info(f"✅ UP3 mode: Found {len(df_all)} records from all _up3 units")
-        
         # ✅ Handle ULP filter (UNITUP spesifik)
-        elif unitup:
+        if unitup:
             query = text("""
                 SELECT * FROM dpm 
                 WHERE UNITUP = :unitup 
@@ -433,16 +1097,36 @@ def process_billing_advanced(blth_kini, unitup, engine):
             return pd.DataFrame(), "Tidak ada data DPM untuk periode ini"
 
         # --- Kolom Wajib ---
-        kolom_wajib = ['IDPEL','NAMA','TARIF','DAYA','KDKELOMPOK','SLALWBP','LWBPCABUT','LWBPPASANG','SAHLWBP','LWBPPAKAI']
+        kolom_wajib = ['IDPEL','NAMA','TARIF','DAYA','KDKELOMPOK','SLALWBP','LWBPCABUT','LWBPPASANG','SAHLWBP','LWBPPAKAI','DLPD']
         for kolom in kolom_wajib:
             if kolom not in df_all.columns:
-                df_all[kolom] = 0
+                df_all[kolom] = 0 if kolom != 'DLPD' else ''
 
         # --- Pisah Data per Bulan ---
         df_kini = df_all[df_all['BLTH'] == blth_kini].copy()
         df_lalu = df_all[df_all['BLTH'] == blth_lalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Y'})
         df_lalulalu = df_all[df_all['BLTH'] == blth_lalulalu][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_X'})
         df_lalu3 = df_all[df_all['BLTH'] == blth_lalu3][['IDPEL','LWBPPAKAI']].rename(columns={'LWBPPAKAI':'LWBPPAKAI_Z'})
+
+        # --- 🔹 PENGECEKAN DUPLIKASI (dari Kode 1) ---
+        duplikat_lalu3 = df_lalu3['IDPEL'].duplicated().sum()
+        duplikat_lalulalu = df_lalulalu['IDPEL'].duplicated().sum()
+        duplikat_lalu = df_lalu['IDPEL'].duplicated().sum()
+        duplikat_kini = df_kini['IDPEL'].duplicated().sum()
+
+        logger.info(f"Duplikat di df_lalu3: {duplikat_lalu3}")
+        logger.info(f"Duplikat di df_lalulalu: {duplikat_lalulalu}")
+        logger.info(f"Duplikat di df_lalu: {duplikat_lalu}")
+        logger.info(f"Duplikat di df_kini: {duplikat_kini}")
+
+        if duplikat_lalu3 > 0:
+            flash(f"⚠️ Ditemukan {duplikat_lalu3} IDPEL duplikat di DPM N - 3.", "warning")
+        if duplikat_lalulalu > 0:
+            flash(f"⚠️ Ditemukan {duplikat_lalulalu} IDPEL duplikat di DPM N - 2.", "warning")
+        if duplikat_lalu > 0:
+            flash(f"⚠️ Ditemukan {duplikat_lalu} IDPEL duplikat di DPM N - 1.", "warning")
+        if duplikat_kini > 0:
+            flash(f"⚠️ Ditemukan {duplikat_kini} IDPEL duplikat di DPM bulan N.", "warning")
 
         # --- Merge Semua Periode ---
         df_merged = (
@@ -451,6 +1135,8 @@ def process_billing_advanced(blth_kini, unitup, engine):
             .merge(df_lalulalu, on='IDPEL', how='left')
             .merge(df_lalu3, on='IDPEL', how='left')
         )
+
+        logger.info(f"Duplikat setelah merge: {df_merged['IDPEL'].duplicated().sum()}")
 
         # --- 🔹 Pastikan semua kolom input ada ---
         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
@@ -461,27 +1147,19 @@ def process_billing_advanced(blth_kini, unitup, engine):
         for kol in ['SLALWBP', 'LWBPCABUT', 'SAHLWBP', 'LWBPPASANG', 'LWBPPAKAI']:
             df_merged[kol] = pd.to_numeric(df_merged[kol], errors='coerce')
 
-        # --- 🔹 Hitung ulang LWBPPAKAI (jika 0 ATAU NaN) ---
-        rumus_lwbp = (
-            df_merged['LWBPCABUT'].fillna(0)
+        # --- 🔹 PERHITUNGAN LWBPPAKAI (dari Kode 1) - Hanya jika kosong ---
+        lwbp_kosong = df_merged['LWBPPAKAI'].isna()
+        count_replaced = lwbp_kosong.sum()
+        logger.info(f"Jumlah data LWBPPAKAI yang dihitung ulang: {count_replaced}")
+
+        # Isi nilai hanya kalau kosong
+        df_merged['LWBPPAKAI'] = np.where(
+            lwbp_kosong,
+            (df_merged['LWBPCABUT'].fillna(0)
             - df_merged['SLALWBP'].fillna(0)
             + df_merged['SAHLWBP'].fillna(0)
-            - df_merged['LWBPPASANG'].fillna(0)
-        )
-
-        # Buat mask nilai kosong (NaN atau 0)
-        mask_kosong = df_merged['LWBPPAKAI'].isna() | (df_merged['LWBPPAKAI'] == 0)
-
-        # Tulis hasil hitungan hanya untuk yang kosong
-        df_merged.loc[mask_kosong, 'LWBPPAKAI'] = rumus_lwbp.loc[mask_kosong]
-
-        # --- 🔹 Pastikan hasil valid ---
-        df_merged['LWBPPAKAI'] = df_merged['LWBPPAKAI'].fillna(0).clip(lower=0)
-
-        # --- 🔹 Debug sementara ---
-        logger.info(
-            f"🔧 LWBPPAKAI dihitung ulang untuk {mask_kosong.sum()} baris kosong. "
-            f"Contoh hasil: {df_merged['LWBPPAKAI'].head(5).tolist()}"
+            - df_merged['LWBPPASANG'].fillna(0)),
+            df_merged['LWBPPAKAI']
         )
 
         # --- Siapkan Kolom KWH ---
@@ -499,44 +1177,65 @@ def process_billing_advanced(blth_kini, unitup, engine):
         daya_kw = df_merged['DAYA'].replace(0, np.nan) / 1000
         jam_nyala = (df_merged['KWH SEKARANG'] / daya_kw).replace([np.inf, -np.inf], 0).fillna(0)
 
-        # --- Tambahkan JAMNYALA600 (kategori 600Up / 600Down) ---
-        df_merged['JAM_NYALA'] = jam_nyala.round(1)
-        df_merged['JAMNYALA600'] = np.select(
-            [jam_nyala > 600, jam_nyala <= 600],
-            ['600Up', '600Down'],
-            default='UNKNOWN'
+        # --- Hitung Rata-rata 3 Bulan ---
+        rerata = df_merged[['LWBPPAKAI_Y','LWBPPAKAI_X','LWBPPAKAI_Z']].fillna(0).mean(axis=1)
+
+        # --- 🔹 KLASIFIKASI DLPD_HITUNG (dari Kode 1) ---
+        # Kondisi stan mundur
+        stan_mundur_condition = (
+            (df_merged['SAHLWBP'] < df_merged['SLALWBP']) &
+            (df_merged['LWBPCABUT'].fillna(0) == 0) &
+            (df_merged['LWBPPASANG'].fillna(0) == 0)
         )
 
-        # --- Hitung Rata-rata 3 Bulan ---
-        rerata_3bulan = df_merged[['KWH 1 BULAN LALU','KWH 2 BULAN LALU','LWBPPAKAI_Z']].fillna(0).mean(axis=1)
+        # Kondisi cek pecahan (ada nilai cabut atau pasang)
+        cek_pecahan_condition = (
+            (df_merged['LWBPCABUT'].fillna(0) != 0) |
+            (df_merged['LWBPPASANG'].fillna(0) != 0)
+        )
 
-        # --- Hitung DLPD_HITUNG ---
-        def label_dlpd(row):
-            now = row['KWH SEKARANG']
-            avg = row['rerata_3bulan']
-            if avg == 0:
-                return "DIV/NA"
-            ratio = (now / avg) * 100
-            if ratio >= 150:
-                return "NAIK_50%UP"
-            elif 140 <= ratio < 150:
-                return "NAIK_40_50"
-            elif ratio <= 50:
-                return "TURUN_50%DOWN"
-            elif 50 < ratio <= 60:
-                return "TURUN_40_50"
-            else:
-                return "AMAN"
+        sortir_naik = 40
+        sortir_turun = 40
+        is_na = df_merged['LWBPPAKAI_Y'].isna() | (df_merged['LWBPPAKAI_Y'] == 0)
+        is_naik = (~is_na) & (percentage >= sortir_naik)
+        is_turun = (~is_na) & (percentage <= -sortir_turun)
+        
+        # Daftar kondisi dan klasifikasi
+        conditions = [
+            (jam_nyala >= 720),
+            cek_pecahan_condition,
+            stan_mundur_condition,
+            (percentage > 50),
+            (is_na & (jam_nyala > 40)), 
+            (percentage < -50),
+            (df_merged['LWBPPAKAI'] == 0),
+            (jam_nyala > 0) & (jam_nyala < 40)
+        ]
 
-        df_merged['rerata_3bulan'] = rerata_3bulan
-        df_merged['DLPD_HITUNG'] = df_merged.apply(label_dlpd, axis=1)
+        choices = [
+            'JN>720',
+            'PECAHAN',
+            'STAN MUNDUR',
+            'NAIK>50%',
+            'DIV/NA',
+            'TURUN<50%',
+            'KWH NOL',
+            'JN<40'
+        ]
+        
+        # Terapkan ke kolom baru
+        df_merged['DLPD_HITUNG'] = np.select(conditions, choices, default='')
 
         # --- Hitung DLPD 3BLN ---
         df_merged['DLPD_3BLN'] = np.where(
-            (df_merged['KWH SEKARANG'] > 1.5 * rerata_3bulan),
+            (df_merged['KWH SEKARANG'] > 1.5 * rerata),
             'Naik50% R3BLN',
             'Turun=50% R3BLN'
         )
+
+        # --- 🔹 UPDATE DPM TABLE - DINONAKTIFKAN ---
+        # Jika ingin mengaktifkan, pastikan fungsi process_dpm() dan update_dpm_table() sudah didefinisikan
+        logger.info("ℹ️ Update DPM table dilewati (fitur dinonaktifkan)")
 
         # --- Klasifikasi KET ---
         is_na = df_merged['KWH 1 BULAN LALU'] == 0
@@ -544,110 +1243,103 @@ def process_billing_advanced(blth_kini, unitup, engine):
         is_turun = (~is_na) & (percentage <= -40)
         ket = np.select([is_na, is_naik, is_turun], ['DIV/NA','NAIK','TURUN'], default='AMAN')
 
-        # --- ✅ Ambil UNITUP dari df_merged (untuk support UP3 multi-unit) ---
-        df_merged['UNITUP'] = df_merged['UNITUP'].fillna('UNKNOWN')
+        # --- Tambahkan JAMNYALA600 ---
+        df_merged['JAMNYALA600'] = np.select(
+            [jam_nyala > 600, jam_nyala <= 600],
+            ['600Up', '600Down'],
+            default='UNKNOWN'
+        )
 
-        # --- Bangun DataFrame Akhir ---
+        # --- Ambil UNITUP dari df_merged ---
+        df_merged['UNITUP'] = df_merged['UNITUP'].fillna(unitup if unitup else 'UNKNOWN')
+
+        # --- Bangun DataFrame Akhir (nama kolom dengan spasi seperti Kode 1) ---
         kroscek = pd.DataFrame({
             'BLTH': blth_kini,
-            'UNITUP': df_merged['UNITUP'],  # ✅ Gunakan UNITUP dari data, bukan parameter
-            'IDPEL': df_merged['IDPEL'],
+            'UNITUP': df_merged['UNITUP'],
+            'IDPEL': df_merged['IDPEL'].astype(str).str.strip().str.lower(),
             'NAMA': df_merged['NAMA'],
             'TARIF': df_merged['TARIF'],
             'DAYA': df_merged['DAYA'].fillna(0).astype(int),
-            'KDKELOMPOK': df_merged['KDKELOMPOK'],
+            'KDKELOMPOK': df_merged['KDKELOMPOK'].fillna(''),
             'SLALWBP': df_merged['SLALWBP'].fillna(0).astype(int),
             'LWBPCABUT': df_merged['LWBPCABUT'].fillna(0).astype(int),
-            'SELISIH_STAN_BONGKAR': (df_merged['SLALWBP'] - df_merged['LWBPCABUT']).fillna(0).astype(int),
-            'LWBPPASANG': df_merged['LWBPPASANG'].fillna(0).astype(int),
+            'SELISIH STAN BONGKAR': (df_merged['SLALWBP'] - df_merged['LWBPCABUT']).fillna(0).astype(int),
+            'LWBP PASANG': df_merged['LWBPPASANG'].fillna(0).astype(int),
             'SAHLWBP': df_merged['SAHLWBP'].fillna(0).astype(int),
-            'KWH_SEKARANG': df_merged['LWBPPAKAI'].fillna(0).astype(int),
-            'KWH_1_BULAN_LALU': df_merged['LWBPPAKAI_Y'].fillna(0).astype(int),
-            'KWH_2_BULAN_LALU': df_merged['LWBPPAKAI_X'].fillna(0).astype(int),
-            'DELTA_PEMKWH': delta.fillna(0).astype(int),
-            'PERSEN': pd.Series(percentage).round(1).astype(str) + '%',
+            'KWH SEKARANG': df_merged['LWBPPAKAI'].fillna(0).astype(int),
+            'KWH 1 BULAN LALU': df_merged['LWBPPAKAI_Y'].fillna(0).astype(int),
+            'KWH 2 BULAN LALU': df_merged['LWBPPAKAI_X'].fillna(0).astype(int),
+            'DELTA PEMKWH': delta.fillna(0).astype(int),
+            '%': pd.Series(percentage).round(1).astype(str) + '%',
             'KET': ket,
-            'JAM_NYALA': df_merged['JAM_NYALA'],
+            'JAM NYALA': jam_nyala.round(1),
             'JAMNYALA600': df_merged['JAMNYALA600'],
-            'DLPD': df_merged.get('DLPD', ''),
+            'DLPD': df_merged['DLPD'].fillna(''),
             'DLPD_HITUNG': df_merged['DLPD_HITUNG'],
             'DLPD_3BLN': df_merged['DLPD_3BLN'],
             'NOMORKWH': '',
-            'HASIL_PEMERIKSAAN': '',
-            'TINDAK_LANJUT': '',
-            'MARKING_KOREKSI': 0
+            'HASIL PEMERIKSAAN': '',
+            'TINDAK LANJUT': ''
         })
+
+        # --- Hapus duplikasi (dari Kode 1) ---
+        kroscek = kroscek.drop_duplicates(subset='IDPEL', keep='first')
 
         # --- Foto & Grafik ---
         path_foto1 = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel="
         path_foto2 = "&blth="
 
-        # =================== FOTO AKHIR ===================
-        kroscek["FOTO_AKHIR"] = kroscek["IDPEL"].apply(
-            lambda x: f"""
-                <button class='btn btn-sm btn-success'
-                        onclick="window.open('{path_foto1}{x}{path_foto2}{blth_kini}', 
-                                            'popup', 
-                                            'width=700,height=700,scrollbars=no,toolbar=no'); 
-                                return false;">
-                    <i class='bi bi-image'></i> Foto Akhir
-                </button>
-            """
+        # Link foto seperti Kode 1 (HTML sederhana, bukan button)
+        kroscek['FOTO AKHIR'] = kroscek['IDPEL'].apply(
+            lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_kini}" target="popup" '
+                      f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_kini}\', \'popup\', '
+                      f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
         )
-
-        # =================== FOTO LALU ===================
-        kroscek["FOTO_LALU"] = kroscek["IDPEL"].apply(
-            lambda x: f"""
-                <button class='btn btn-sm btn-warning'
-                        onclick="window.open('{path_foto1}{x}{path_foto2}{blth_lalu}', 
-                                            'popup', 
-                                            'width=700,height=700,scrollbars=no,toolbar=no'); 
-                                return false;">
-                    <i class='bi bi-image'></i> Foto Lalu
-                </button>
-            """
-        )
-
-        # =================== FOTO LALU 2 ===================
-        kroscek["FOTO_LALU2"] = kroscek["IDPEL"].apply(
-            lambda x: f"""
-                <button class='btn btn-sm btn-secondary'
-                        onclick="window.open('{path_foto1}{x}{path_foto2}{blth_lalulalu}', 
-                                            'popup', 
-                                            'width=700,height=700,scrollbars=no,toolbar=no'); 
-                                return false;">
-                    <i class='bi bi-image'></i> Foto 2 Lalu
-                </button>
-            """
-        )
-
-        # =================== FOTO 3 BULAN (Gabungan) ===================
-        # ✅ Gunakan UNITUP dari masing-masing row untuk link grafik
-        def create_foto3bln(row):
-            return f"""
-                <button class='btn btn-sm btn-primary' 
-                        onclick="open3Foto('{row['IDPEL']}', '{blth_kini}'); return false;">
-                    <i class='bi bi-images'></i> {str(row['IDPEL'])[-5:]}
-                </button>
-            """
         
-        kroscek["FOTO_3BLN"] = kroscek.apply(create_foto3bln, axis=1)
-
-        # =================== GRAFIK ===================
-        # ✅ Gunakan UNITUP dari masing-masing row untuk link grafik
-        def create_grafik_link(row):
-            return f'<a href="/grafik/{row["IDPEL"]}?blth={blth_kini}&ulp={row["UNITUP"]}" target="_blank">GRAFIK</a>'
+        kroscek['FOTO LALU'] = kroscek['IDPEL'].apply(
+            lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalu}" target="popup" '
+                      f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalu}\', \'popup\', '
+                      f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
+        )
         
-        kroscek["GRAFIK"] = kroscek.apply(create_grafik_link, axis=1)
+        kroscek['FOTO LALU2'] = kroscek['IDPEL'].apply(
+            lambda x: f'<a href="{path_foto1}{x}{path_foto2}{blth_lalulalu}" target="popup" '
+                      f'onclick="window.open(\'{path_foto1}{x}{path_foto2}{blth_lalulalu}\', \'popup\', '
+                      f'\'width=700,height=700,scrollbars=no,toolbar=no\'); return false;">LINK FOTO</a>'
+        )
+
+        # Link 3 foto sekaligus, pakai 5 digit terakhir IDPEL sebagai label link
+        kroscek['FOTO 3BLN'] = kroscek['IDPEL'].apply(
+            lambda x: f'<a href="#" onclick="open3Foto(\'{x}\', \'{blth_kini}\'); return false;">{str(x)[-5:]}</a>'
+        )
+
+        # Grafik link
+        kroscek['GRAFIK'] = kroscek.apply(
+            lambda row: f'<a href="/grafik/{row["IDPEL"]}?blth={blth_kini}&ulp={row["UNITUP"]}" target="_blank">LIHAT GRAFIK</a>',
+            axis=1
+        )
+
+            # Ubah nama kolom agar sesuai dengan nama di database
+        kroscek.rename(columns={
+            'SELISIH STAN BONGKAR': 'SELISIH_STAN_BONGKAR',
+            'LWBP PASANG': 'LWBPPASANG',
+            'KWH SEKARANG': 'KWH_SEKARANG',
+            'KWH 1 BULAN LALU': 'KWH_1_BULAN_LALU',
+            'KWH 2 BULAN LALU': 'KWH_2_BULAN_LALU',
+            'DELTA PEMKWH': 'DELTA_PEMKWH',
+            '%': 'PERSEN',   # 🔹 tambahkan ini
+            'JAM NYALA': 'JAM_NYALA',
+            'HASIL PEMERIKSAAN': 'HASIL_PEMERIKSAAN',
+            'TINDAK LANJUT': 'TINDAK_LANJUT',
+            'FOTO AKHIR': 'FOTO_AKHIR',
+            'FOTO LALU': 'FOTO_LALU',
+            'FOTO LALU2': 'FOTO_LALU2',
+            'FOTO 3BLN': 'FOTO_3BLN'
+        }, inplace=True)
+
 
         logger.info(f"✅ Billing processed successfully: {len(kroscek)} records")
-        
-        # ✅ Log summary per UNITUP jika mode UP3
-        if unitup == '_up3':
-            unitup_counts = kroscek['UNITUP'].value_counts()
-            logger.info(f"📊 Summary per UNITUP:")
-            for unit, count in unitup_counts.items():
-                logger.info(f"   {unit}: {count} records")
         
         return kroscek, None
 
@@ -720,6 +1412,7 @@ def save_to_billing_with_trigger(df, engine, username):
         logger.error(f"🔥 Error save_to_billing_with_trigger: {str(e)}")
         logger.error(traceback.format_exc())
         return {'success': 0, 'failed': len(df), 'message': str(e)}
+
 
 @app.route('/dashboard_ulp', methods=['GET', 'POST'])
 def dashboard_ulp():
@@ -3313,6 +4006,26 @@ def update_verifikasi_single():
         logger.error(f"❌ Error update_verifikasi_single: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'message': str(e)})
+
+
+###Dashboard Monitoring
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # =================== MISSING IMPORT ===================
 from flask import send_file

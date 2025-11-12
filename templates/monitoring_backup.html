@@ -1,0 +1,1637 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Monitoring{% endblock title %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
+      crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+  
+  body {
+    background-image: linear-gradient(180deg, #11909b 0%, #f8f9fa 100%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  .sidenav {
+    box-shadow: none !important;
+  }
+  
+  .main-content h1[id],
+  .main-content h2[id],
+  .main-content h3[id] {
+    scroll-margin-top: 80px;
+  }
+  
+  .data-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .card-header h1, .card-header h2, .card-header h3, .card-header h4 {
+    margin-bottom: 0;
+    color: #344767 !important;
+  }
+
+  .recap-table {
+    font-size: 0.875rem;
+    color: #344767;
+  }
+
+  .recap-table thead th {
+    background-color: #26a69a;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    font-size: small !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid #4db6ac;
+  }
+
+  .recap-table .total-row {
+    background-color: #b2dfdb;
+    font-weight: bold;
+    color: #004d40;
+  }
+
+  .recap-table a {
+    color: #00796b;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  
+  .recap-table a:hover {
+    color: #004d40;
+    text-decoration: underline;
+  }
+
+  #detailTable thead th {
+    position: sticky;
+    top: -1px;
+    background-color: #26a69a;
+    color: #ffffff !important;
+    z-index: 100;
+    border-bottom: 2px solid #26a69a;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    padding: 0.85rem 1rem;
+  }
+
+  #detailTable tbody tr.highlight {
+    background-color: #e0f2f1 !important;
+    font-weight: 500;
+  }
+
+  #detailTable a {
+    color: #26a69a;
+    font-weight: 600;
+    text-decoration: underline;
+    transition: color 0.2s ease-in-out;
+  }
+
+  #detailTable a:hover {
+    color: #1e847a;
+    text-decoration-style: solid;
+  }
+
+  .sahlwbp-cell {
+    background-color: #b3e5fc !important;
+    font-weight: bold;
+    color: #014361 !important;
+  }
+
+  #detailTableContainer {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  #saveChangesBtn .spinner-border {
+    margin-right: 0.5rem;
+  }
+
+  /* Filter Styles */
+  .filter-section {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .filter-section .form-label {
+    font-weight: 600;
+    color: #344767;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-section .form-select {
+    border: 1px solid #d2d6da;
+    border-radius: 6px;
+  }
+
+  .filter-section .btn-primary {
+    background-color: #26a69a;
+    border-color: #26a69a;
+  }
+
+  .filter-section .btn-primary:hover {
+    background-color: #00897b;
+    border-color: #00897b;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<main class="main-content position-relative border-radius-lg">
+  <div class="container-fluid py-4">
+    
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <form method="GET" action="{{ url_for('monitoring.dashboard_monitoring') }}" class="row g-3 align-items-end">
+        {% if available_unitup %}
+        <div class="col-md-4">
+          <label for="unitupFilter" class="form-label">
+            <i class="fas fa-building"></i> Filter UNITUP
+          </label>
+          <select class="form-select" id="unitupFilter" name="unitup">
+            <option value="">-- Semua ULP --</option>
+            {% for ulp in available_unitup %}
+            <option value="{{ ulp.unitup }}" {% if selected_unitup == ulp.unitup %}selected{% endif %}>
+              {{ ulp.unitup }} - {{ ulp.nama_ulp }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        
+        <div class="col-md-4">
+          <label for="blthFilter" class="form-label">
+            <i class="fas fa-calendar"></i> Filter BLTH (Periode)
+          </label>
+          <select class="form-select" id="blthFilter" name="blth">
+            {% for blth in available_blth %}
+            <option value="{{ blth }}" {% if selected_blth == blth %}selected{% endif %}>
+              {{ blth }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter"></i> Terapkan Filter
+          </button>
+        </div>
+      </form>
+      
+      {% if selected_unitup or selected_blth %}
+      <div class="mt-3">
+        <small class="text-muted">
+          <i class="fas fa-info-circle"></i> Filter Aktif: 
+          {% if selected_unitup %}UNITUP: <strong>{{ selected_unitup }}</strong>{% endif %}
+          {% if selected_blth %}BLTH: <strong>{{ selected_blth }}</strong>{% endif %}
+        </small>
+      </div>
+      {% endif %}
+    </div>
+<!-- 
+    <!-- Pivot Marking Kepdir 1336 (Hari Baca) -->
+    <!-- <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2 id="pivot-marking-ulps">📌 Pivot Marking Kepdir 1336 (Hari Baca)</h2>
+      </div>
+      <div class="card-body">
+
+        {% if tables %}
+          {% for tbl, name, unitup in tables %}
+            {% set pivot_key = name ~ '_' ~ unitup %}
+            {% set data = pivot_tables_marking.get(pivot_key) %}
+
+            {% if data and data|length == 2 %}
+              {% set pivot = data[0] %}
+              {% set statuses = data[1] %}
+              
+              <h4 id="pivot-marking-{{ pivot_key }}">{{ name }}</h4>
+              <div class="table-responsive p-0">
+                <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+                  <thead class="thead-light">
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        BLTH - KDKELOMPOK
+                      </th>
+                      {% for s in statuses %}
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          {{ s }}
+                        </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for label, row in pivot.items() %}
+                      <tr>
+                        <td>{{ label }}</td>
+                        {% for s in statuses %}
+                          {% set jumlah = row.get(s, 0) %}
+                          <td>
+                            {% if jumlah > 0 %}
+                              <a href="#" class="detail-link"
+                                 data-blth="{{ label.split(' - ')[0] }}"
+                                 data-kdkelompok="{{ label.split(' - ')[1] }}"
+                                 data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}"
+                                 data-table="{{ tbl }}"
+                                 data-unitup="{{ unitup }}">
+                                {{ jumlah }}
+                              </a>
+                            {% else %}
+                              0
+                            {% endif %}
+                          </td>
+                        {% endfor %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted">Tidak ada data untuk {{ name }}</p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Tidak ada data tabel yang tersedia.</p>
+        {% endif %}
+
+      </div>
+    </div> --> -->
+
+    <!-- Pivot Marking Kepdir 1336 (DLPD) -->
+    <!-- <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2>📌 Pivot Marking Kepdir 1336 (DLPD)</h2>
+      </div>
+      <div class="card-body">
+        {% if tables %}
+          {% for tbl, name, unitup in tables %}
+            {% set pivot_key = name ~ '_' ~ unitup %}
+            {% set data = pivot_tables_dlpd.get(pivot_key) %}
+            
+            {% if data and data|length == 2 %}
+              {% set pivot = data[0] %}
+              {% set statuses = data[1] %}
+              
+              <h4>{{ name }}</h4>
+              <div class="table-responsive p-0">
+                <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+                  <thead class="thead-light">
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        DLPD_HITUNG
+                      </th>
+                      {% for s in statuses %}
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        {{ s }}
+                      </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for dlpd, row in pivot.items() %}
+                    <tr>
+                      <td>{{ dlpd }}</td>
+                      {% for s in statuses %}
+                      {% set jumlah = row.get(s, 0) %}
+                      <td>
+                        {% if jumlah > 0 %}
+                        <a href="#" class="detail-link_dlpd"
+                           data-dlpd="{{ dlpd }}"
+                           data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}"
+                           data-table="{{ tbl }}"
+                           data-unitup="{{ unitup }}">
+                          {{ jumlah }}
+                        </a>
+                        {% else %}
+                        0
+                        {% endif %}
+                      </td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                      <td><strong>JUMLAH</strong></td>
+                      {% for s in statuses %}
+                      {% set total = namespace(value=0) %}
+                      {% for dlpd, row in pivot.items() %}
+                      {% set total.value = total.value + row.get(s, 0) %}
+                      {% endfor %}
+                      <td><strong>{{ total.value }}</strong></td>
+                      {% endfor %}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted">Tidak ada data untuk {{ name }}</p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Tidak ada data tabel yang tersedia.</p>
+        {% endif %}
+      </div>
+    </div> -->
+<!-- Di template monitoring_dashboard.html -->
+<!-- Ganti bagian Pivot Marking Kepdir 1336 (Hari Baca) -->
+
+<div class="card data-card mb-4">
+  <div class="card-header pb-0">
+    <h2 id="pivot-marking-ulps">📌 Pivot Marking Kepdir 1336 (Hari Baca)</h2>
+  </div>
+  <div class="card-body">
+    {% if tables %}
+      {% for tbl, name, unitup in tables %}
+        {% set pivot_key = name ~ '_' ~ unitup %}
+        {% set data = pivot_tables_marking.get(pivot_key) %}
+
+        {% if data and data|length == 2 %}
+          {% set pivot = data[0] %}
+          {% set statuses = data[1] %}
+          
+          <h4 id="pivot-marking-{{ pivot_key }}">{{ name }}</h4>
+          <div class="table-responsive p-0">
+            <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+              <thead class="thead-light">
+                <tr>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                    BLTH - KDKELOMPOK
+                  </th>
+                  {% for s in statuses %}
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                      {{ s }}
+                    </th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for label, row in pivot.items() %}
+                  <tr>
+                    <td>{{ label }}</td>
+                    {% for s in statuses %}
+                      {% set jumlah = row.get(s, 0) %}
+                      <td>
+                        {% if jumlah > 0 %}
+                          <a href="#" class="detail-link"
+                             data-blth="{{ label.split(' - ')[0] }}"
+                             data-kdkelompok="{{ label.split(' - ')[1] }}"
+                             data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}"
+                             data-table="{{ tbl }}"
+                             data-unitup="{{ unitup }}">
+                            {{ jumlah }}
+                          </a>
+                        {% else %}
+                          0
+                        {% endif %}
+                      </td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">Tidak ada data untuk {{ name }}</p>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="text-muted">Tidak ada data tabel yang tersedia.</p>
+    {% endif %}
+  </div>
+</div>
+
+    <!-- Kumulatif Data Upload DPM -->
+    <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h1>📁 Kumulatif Data Upload DPM</h1>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive p-0">
+          <table class="table table-striped table-hover align-items-center recap-table">
+            <thead class="thead-light">
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Status Pemeriksaan
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Jumlah
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Persentase (%)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in recap_all %}
+              <tr>
+                <td>{{ row.status }}</td>
+                <td>{{ row.jumlah }}</td>
+                <td>{{ "%.1f"|format(row.persentase) }}%</td>
+              </tr>
+              {% endfor %}
+              <tr class="total-row">
+                <td>Total</td>
+                <td>{{ total_all }}</td>
+                <td>100%</td>
+              </tr>
+              <tr>
+                <td><strong>NAIK 40%</strong></td>
+                <td colspan="2">
+                  {{ summary_all['NAIK']['jumlah'] }} ({{ summary_all['NAIK']['persentase'] }}%)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>TURUN 40%</strong></td>
+                <td colspan="2">
+                  {{ summary_all['TURUN']['jumlah'] }} ({{ summary_all['TURUN']['persentase'] }}%)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>DIV/NA</strong></td>
+                <td colspan="2">
+                  {{ summary_all['DIV/NA']['jumlah'] }} ({{ summary_all['DIV/NA']['persentase'] }}%)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Data Update Koreksi -->
+    <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2 id="pivot-all-koreksi">✏️ Detail Data Update Koreksi</h2>
+      </div>
+      <div class="card-body">
+        {% if tables %}
+          {% for tbl, name, unitup in tables %}
+            {% set pivot_key = name ~ '_' ~ unitup %}
+            {% set data = pivot_tables_koreksi.get(pivot_key) %}
+            
+            {% if data and data|length == 2 %}
+              {% set pivot = data[0] %}
+              {% set statuses = data[1] %}
+              
+              <h4 id="pivot-all-koreksi-{{ tbl }}">{{ name }}</h4>
+              <div class="table-responsive p-0">
+                <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+                  <thead class="thead-light">
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        BLTH - KDKELOMPOK
+                      </th>
+                      {% for s in statuses %}
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        {{ s }}
+                      </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for label, row in pivot.items() %}
+                    <tr>
+                      <td>{{ label }}</td>
+                      {% for s in statuses %}
+                      {% set jumlah = row.get(s, 0) %}
+                      <td>
+                        {% if jumlah > 0 %}
+                        <a href="#" class="detail-link_koreksi"
+                           data-blth="{{ label.split(' - ')[0] }}"
+                           data-kdkelompok="{{ label.split(' - ')[1] }}"
+                           data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}"
+                           data-table="{{ tbl }}"
+                           data-unitup="{{ unitup }}">
+                          {{ jumlah }}
+                        </a>
+                        {% else %}
+                        0
+                        {% endif %}
+                      </td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted">Tidak ada data untuk {{ name }}</p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Tidak ada data tabel yang tersedia.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Pivot PLG GANDA -->
+    <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2>📌 Pivot PLG GANDA</h2>
+      </div>
+      <div class="card-body">
+        {% if tables %}
+          {% for tbl, name, unitup in tables %}
+            {% set pivot_key = name ~ '_' ~ unitup %}
+            {% set data = pivot_tables_ganda.get(pivot_key) %}
+            
+            {% if data and data|length == 2 %}
+              {% set pivot = data[0] %}
+              {% set statuses = data[1] %}
+              
+              <h4>{{ name }}</h4>
+              <div class="table-responsive p-0">
+                <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+                  <thead class="thead-light">
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        DLPD_HITUNG
+                      </th>
+                      {% for s in statuses %}
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        {{ s }}
+                      </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for dlpd, row in pivot.items() %}
+                    <tr>
+                      <td>{{ dlpd if dlpd else 'TANPA DLPD' }}</td>
+                      {% for s in statuses %}
+                      {% set jumlah = row.get(s, 0) %}
+                      <td>
+                        {% if jumlah > 0 %}
+                        <a href="#" class="detail-link_ganda"
+                           data-dlpd="{{ dlpd }}"
+                           data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}"
+                           data-table="{{ tbl }}"
+                           data-unitup="{{ unitup }}">
+                          {{ jumlah }}
+                        </a>
+                        {% else %}
+                        0
+                        {% endif %}
+                      </td>
+                      {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                      <td><strong>JUMLAH</strong></td>
+                      {% for s in statuses %}
+                      {% set total = namespace(value=0) %}
+                      {% for dlpd, row in pivot.items() %}
+                      {% set total.value = total.value + row.get(s, 0) %}
+                      {% endfor %}
+                      <td><strong>{{ total.value }}</strong></td>
+                      {% endfor %}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted">Tidak ada data untuk {{ name }}</p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Tidak ada data tabel yang tersedia.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailModalLabel">Detail Pelanggan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="detailTableContainer">
+          <table class="table table-bordered table-striped table-hover table-sm align-middle" id="detailTable">
+            <thead id="detailTableHead"></thead>
+            <tbody id="detailTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        <button type="button" class="btn btn-primary" id="saveChangesBtn">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+  // Foto functions
+  function open3Foto(idpel, blthKini) {
+    const path = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    function getPreviousBlth(blth) {
+      let year = parseInt(blth.substring(0, 4));
+      let month = parseInt(blth.substring(4, 6));
+      month -= 1;
+      if (month === 0) {
+        month = 12;
+        year -= 1;
+      }
+      return year.toString() + (month < 10 ? "0" + month : month);
+    }
+    const blthLalu = getPreviousBlth(blthKini);
+    const blthLalu2 = getPreviousBlth(blthLalu);
+    const width = 250, height = 1000, spacing = 10, top = 10;
+    const left1 = 10, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    window.open(`${path}${idpel}&blth=${blthKini}`, "_foto1", 
+                `width=${width},height=${height},top=${top},left=${left1},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu}`, "_foto2", 
+                `width=${width},height=${height},top=${top},left=${left2},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu2}`, "_foto3", 
+                `width=${width},height=${height},top=${top},left=${left3},resizable=yes`);
+  }
+
+  function open3FotoAP2T(idpel, blthKini) {
+    const path = "https://ap2t.pln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    function getPreviousBlth(blth) {
+      let year = parseInt(blth.substring(0, 4));
+      let month = parseInt(blth.substring(4, 6));
+      month -= 1;
+      if (month === 0) {
+        month = 12;
+        year -= 1;
+      }
+      return year.toString() + (month < 10 ? "0" + month : month);
+    }
+    const blthLalu = getPreviousBlth(blthKini);
+    const blthLalu2 = getPreviousBlth(blthLalu);
+    const width = 250, height = 1000, spacing = 10, top = 10;
+    const left1 = 10, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthKini}&isPhoto=null`, "_foto1", 
+                `width=${width},height=${height},top=${top},left=${left1},resizable=yes`);
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthLalu}&isPhoto=null`, "_foto2", 
+                `width=${width},height=${height},top=${top},left=${left2},resizable=yes`);
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthLalu2}&isPhoto=null`, "_foto3", 
+                `width=${width},height=${height},top=${top},left=${left3},resizable=yes`);
+  }
+///////////////////////////////batas
+$(document).ready(function () {
+  console.log("✅ jQuery ready!");
+  console.log("📊 Total .detail-link elements:", $(".detail-link").length);
+
+  const hasilOptions = [
+    "SESUAI", "TEMPER NYALA", "SALAH STAN", "SALAH FOTO", "FOTO BURAM",
+    "ANOMALI PDL", "LEBIH TAGIH", "KURANG TAGIH", "BKN FOTO KWH", "BENCANA",
+    "3BLN TANPA STAN", "BACA ULANG", "MASUK 720JN", "BACA AI"
+  ];
+
+  const baseColumns = [
+    "BLTH", "IDPEL", "NAMA", "DELTA_PEMKWH", "GRAFIK", "SAHLWBP", "NOMET",
+    "FOTO_3BLN", "HASIL_PEMERIKSAAN", "STAN_VERIFIKASI", "TINDAK_LANJUT"
+  ];
+
+  function getVisibleColumns(includeAP2T = true, includeVerifikasi = false) {
+    const visibleColumns = [];
+    baseColumns.forEach((col) => {
+      if (col === "HASIL_PEMERIKSAAN") {
+        if (includeAP2T) visibleColumns.push("FOTO 3BLN AP2T");
+        if (includeVerifikasi) visibleColumns.push("VERIFIKASI");
+      }
+      visibleColumns.push(col);
+    });
+    return visibleColumns;
+  }
+
+  function renderTableHeader(visibleColumns, currentSort) {
+    $("#detailTableHead").empty();
+    let headerRow = "<tr><th>No</th>";
+    visibleColumns.forEach(function (col) {
+      const sortIcon = currentSort.column === col
+        ? (currentSort.direction === "asc" ? '<i class="bi bi-sort-up"></i>' : '<i class="bi bi-sort-down"></i>')
+        : '<i class="bi bi-arrow-down-up" style="opacity: 0.3;"></i>';
+      headerRow += `<th class="sortable-header" data-column="${col}">${col} <span class="sort-icon float-end">${sortIcon}</span></th>`;
+    });
+    headerRow += "<th>DATA DETAIL</th></tr>";
+    $("#detailTableHead").append(headerRow);
+  }
+
+  function renderTableBody(data, visibleColumns) {
+    $("#detailTableBody").empty();
+    data.forEach(function (row, index) {
+      let tr = `<tr><td>${index + 1}</td>`;
+      visibleColumns.forEach(function (col) {
+        if (col === "HASIL_PEMERIKSAAN") {
+          tr += `<td><select name="hasil_${row["IDPEL"]}" class="form-select form-select-sm">`;
+          tr += '<option value="">-</option>';
+          hasilOptions.forEach(function (opt) {
+            const selected = row[col] === opt ? "selected" : "";
+            tr += `<option value="${opt}" ${selected}>${opt}</option>`;
+          });
+          tr += "</select></td>";
+        } else if (col === "STAN_VERIFIKASI") {
+          const val = row[col] || "";
+          tr += `<td><input type="text" class="form-control form-control-sm stan-verifikasi-input" data-idpel="${row["IDPEL"]}" value="${val}"></td>`;
+        } else if (col === "TINDAK_LANJUT") {
+          const val = row[col] || "";
+          tr += `<td><textarea name="tindak_${row["IDPEL"]}" rows="2" class="form-control form-control-sm">${val}</textarea></td>`;
+        } else if (col === "FOTO 3BLN AP2T") {
+          tr += `<td><button type="button" class="btn btn-sm btn-warning foto-3bln-ap2t-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" onclick="open3FotoAP2T('${row["IDPEL"]}', '${row["BLTH"]}')"><i class="fas fa-image"></i> Link AP2T</button></td>`;
+        } else if (col === "VERIFIKASI") {
+          tr += `<td><button type="button" class="btn btn-sm btn-info foto-3bln-ap2t-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"] || ""}"><i class="fas fa-check-circle"></i> VERIFIED</button></td>`;
+        } else if (col === "FOTO_3BLN") {
+          let fotoHtml = row[col] || "";
+          fotoHtml = fotoHtml.replace(/<a\b([^>]*)>/, `<a class="foto-3bln-link" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" $1>`);
+          tr += `<td>${fotoHtml}</td>`;
+        } else {
+          tr += `<td>${row[col] !== null && row[col] !== undefined ? row[col] : ""}</td>`;
+        }
+      });
+      tr += `<td><button class="btn btn-sm btn-info detail-plg-btn" data-idpel="${row["IDPEL"]}"><i class="fas fa-info-circle"></i> Detail</button></td></tr>`;
+      $("#detailTableBody").append(tr);
+    });
+  }
+
+  function setupSorting(originalData, visibleColumns) {
+    let currentSort = { column: null, direction: "asc" };
+    
+    $(document).off("click", ".sortable-header");
+    $(document).on("click", ".sortable-header", function () {
+      const columnName = $(this).data("column");
+      currentSort.direction = currentSort.column === columnName && currentSort.direction === "asc" ? "desc" : "asc";
+      currentSort.column = columnName;
+
+      const sortedData = [...originalData].sort((a, b) => {
+        const valA = a[columnName];
+        const valB = b[columnName];
+        if (valA === valB) return 0;
+        if (valA === null || valA === undefined) return 1;
+        if (valB === null || valB === undefined) return -1;
+        
+        if (!isNaN(valA) && !isNaN(valB)) {
+          return currentSort.direction === "asc" ? parseFloat(valA) - parseFloat(valB) : parseFloat(valB) - parseFloat(valA);
+        }
+        return currentSort.direction === "asc" ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+      });
+
+      renderTableHeader(visibleColumns, currentSort);
+      renderTableBody(sortedData, visibleColumns);
+      highlightModalTable();
+    });
+
+    return currentSort;
+  }
+
+  // ✅ SOLUSI UTAMA: Gunakan Event Delegation untuk .detail-link
+  $(document).on("click", ".detail-link", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("🖱️ Detail link clicked!");
+    
+    const blth = $(this).data("blth");
+    const kdkelompok = $(this).data("kdkelompok");
+    const hasil_pemeriksaan = $(this).data("hasilpemeriksaan") || "";
+    const table = $(this).data("table");
+    const unitup = $(this).data("unitup") || "";
+    const dlpd_hitung = $(this).data("dlpd") || "";
+    
+    console.log("📤 Request data:", { blth, kdkelompok, table, unitup, hasil_pemeriksaan });
+    
+    if (!blth || !kdkelompok || !table) {
+      alert("❌ Data tidak lengkap! BLTH, KDKELOMPOK, dan TABLE wajib ada.");
+      return false;
+    }
+    
+    $("#detailModal").attr("data-table", table);
+    $("#detailTable").attr("data-table", table);
+    $("#detailModalLabel").text(`Detail Pelanggan untuk ${blth} - ${kdkelompok} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`);
+    $("#detailTableHead, #detailTableBody").empty();
+    
+    // Show loading state
+    $("#detailTableBody").html('<tr><td colspan="15" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Memuat data...</p></td></tr>');
+    
+    // Show modal immediately
+    const modal = new bootstrap.Modal(document.getElementById("detailModal"));
+    modal.show();
+
+    // AJAX request
+    $.ajax({
+      url: "{{ url_for('monitoring.get_detail_pelanggan_dlpd_hb') }}",
+      method: "GET",
+      data: {
+        blth: blth,
+        kdkelompok: kdkelompok,
+        hasil_pemeriksaan: hasil_pemeriksaan,
+        table: table,
+        dlpd_hitung: dlpd_hitung,
+        unitup: unitup
+      },
+      success: function (response) {
+        console.log("✅ Response received:", response);
+        
+        if (!response.data || response.data.length === 0) {
+          $("#detailTableBody").html('<tr><td colspan="15" class="text-center text-warning">⚠️ Data tidak ditemukan</td></tr>');
+          return;
+        }
+        
+        const visibleColumns = getVisibleColumns(true, false);
+        const originalData = response.data;
+        const currentSort = { column: null, direction: "asc" };
+        
+        renderTableHeader(visibleColumns, currentSort);
+        renderTableBody(originalData, visibleColumns);
+        setupSorting(originalData, visibleColumns);
+        highlightModalTable();
+      },
+      error: function (xhr, status, error) {
+        console.error("❌ AJAX Error:", { xhr, status, error });
+        console.error("❌ Response:", xhr.responseText);
+        
+        $("#detailTableBody").html('<tr><td colspan="15" class="text-center text-danger">❌ Gagal memuat data: ' + (xhr.responseJSON?.error || error) + '</td></tr>');
+      }
+    });
+    
+    return false;
+  });
+
+  // Handler untuk tombol foto
+  $(document).on("click", ".foto-3bln-link, .foto-3bln-ap2t-btn", function (e) {
+    e.preventDefault();
+    const idpel = $(this).data("idpel");
+    const sahlwbp = ($(this).data("sahlwbp") || "").toString();
+    updateStanVerifikasiDanHasil(idpel, sahlwbp);
+  });
+
+  function updateStanVerifikasiDanHasil(idpel, sahlwbp) {
+    const inputEl = $(`input.stan-verifikasi-input[data-idpel="${idpel}"]`);
+    if (inputEl.length) {
+      const currentVal = (inputEl.val() || "").trim();
+      if (currentVal === "" || currentVal === "-") {
+        inputEl.val(sahlwbp).addClass("is-valid");
+        console.log(`STAN_VERIFIKASI diubah ke: ${sahlwbp}`);
+      }
+    }
+    
+    const selectEl = $(`select[name="hasil_${idpel}"]`);
+    if (selectEl.length) {
+      const currentVal = selectEl.val().trim();
+      if (currentVal === "" || currentVal === "-") {
+        if (selectEl.find('option[value="SESUAI"]').length === 0) {
+          selectEl.append('<option value="SESUAI">SESUAI</option>');
+        }
+        selectEl.val("SESUAI").trigger("change").addClass("is-valid");
+        console.log("HASIL PEMERIKSAAN diubah ke: SESUAI");
+      }
+    }
+  }
+
+  // Tombol Simpan
+  $("#saveChangesBtn").on("click", function () {
+    const btn = $(this);
+    let updates = [];
+    const tableName = $("#detailModal").attr("data-table");
+
+    $("#detailTableBody tr").each(function () {
+      const row = $(this);
+      const idpel = row.find("select[name^='hasil_']").attr("name").split("_")[1] || row.find("input.stan-verifikasi-input").data("idpel");
+      const hasil = row.find(`select[name="hasil_${idpel}"]`).val();
+      const tindak = row.find(`textarea[name="tindak_${idpel}"]`).val();
+      const stan_verifikasi = row.find(`input.stan-verifikasi-input[data-idpel="${idpel}"]`).val() || "";
+      
+      updates.push({ IDPEL: idpel, HASIL: hasil, TINDAK: tindak, STAN: stan_verifikasi });
+    });
+
+    btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status"></span> Menyimpan...');
+
+    $.ajax({
+      url: "{{ url_for('monitoring.update_hasil_pemeriksaan') }}",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ table: tableName, updates: updates }),
+      success: function () {
+        alert("✅ Data berhasil disimpan!");
+        location.reload();
+      },
+      error: function () {
+        alert("❌ Gagal menyimpan data.");
+        btn.prop("disabled", false).html("Simpan Perubahan");
+      }
+    });
+  });
+});
+
+function highlightModalTable() {
+  document.querySelectorAll("#detailTable tbody tr").forEach((row) => {
+    row.addEventListener("click", function () {
+      document.querySelectorAll("#detailTable tbody tr").forEach((r) => r.classList.remove("highlight"));
+      this.classList.add("highlight");
+    });
+  });
+  
+  const table = document.querySelector("#detailTable");
+  if (!table) return;
+  
+  setTimeout(() => {
+    const headerCells = Array.from(table.querySelectorAll("thead th"));
+    const sahlwbpIndex = headerCells.findIndex((th) => th.innerText.trim().toUpperCase() === "SAHLWBP");
+    if (sahlwbpIndex !== -1) {
+      table.querySelectorAll("tbody tr").forEach((row) => {
+        const cell = row.cells[sahlwbpIndex];
+        if (cell) cell.classList.add("sahlwbp-cell");
+      });
+    }
+  }, 100);
+}
+///////////////////////////////batas
+  function highlightModalTable() {
+    document.querySelectorAll("#detailTable tbody tr").forEach((row) => {
+      row.addEventListener("click", function () {
+        document.querySelectorAll("#detailTable tbody tr").forEach((r) => r.classList.remove("highlight"));
+        this.classList.add("highlight");
+      });
+    });
+    const table = document.querySelector("#detailTable");
+    if (!table) return;
+    setTimeout(() => {
+      const headerCells = Array.from(table.querySelectorAll("thead th"));
+      const sahlwbpIndex = headerCells.findIndex((th) => th.innerText.trim().toUpperCase() === "SAHLWBP");
+      if (sahlwbpIndex !== -1) {
+        table.querySelectorAll("tbody tr").forEach((row) => {
+          const cell = row.cells[sahlwbpIndex];
+          if (cell) {
+            cell.classList.add("sahlwbp-cell");
+          }
+        });
+      }
+    }, 100);
+  }
+
+  // Helper function to update STAN_VERIFIKASI and HASIL PEMERIKSAAN
+  function updateStanVerifikasiDanHasil(idpel, sahlwbp) {
+    const inputEl = $(`input.stan-verifikasi-input[data-idpel="${idpel}"]`);
+    if (inputEl.length) {
+      const currentVal = (inputEl.val() || "").trim();
+      if (currentVal === "" || currentVal === "-") {
+        inputEl.val(sahlwbp).addClass("is-valid");
+        console.log(`STAN_VERIFIKASI diubah ke: ${sahlwbp}`);
+      } else {
+        console.log(`STAN_VERIFIKASI sudah terisi: ${currentVal}, tidak diubah.`);
+      }
+    }
+    const selectEl = $(`select[name="hasil_${idpel}"]`);
+    if (selectEl.length) {
+      const currentVal = selectEl.val().trim();
+      if (currentVal === "" || currentVal === "-") {
+        if (selectEl.find('option[value="SESUAI"]').length === 0) {
+          selectEl.append('<option value="SESUAI">SESUAI</option>');
+        }
+        selectEl.val("SESUAI").trigger("change").addClass("is-valid");
+        console.log(`HASIL PEMERIKSAAN diubah ke: SESUAI`);
+      } else {
+        console.log(`HASIL PEMERIKSAAN sudah diisi: ${currentVal}, tidak diubah.`);
+      }
+    }
+  }
+
+  $(document).ready(function () {
+    const hasilOptions = [
+      "SESUAI",
+      "TEMPER NYALA",
+      "SALAH STAN",
+      "SALAH FOTO",
+      "FOTO BURAM",
+      "ANOMALI PDL",
+      "LEBIH TAGIH",
+      "KURANG TAGIH",
+      "BKN FOTO KWH",
+      "BENCANA",
+      "3BLN TANPA STAN",
+      "BACA ULANG",
+      "MASUK 720JN",
+      "BACA AI",
+    ];
+
+    const baseColumns = [
+      "BLTH",
+      "IDPEL",
+      "NAMA",
+      "DELTA PEMKWH",
+      "GRAFIK",
+      "SAHLWBP",
+      "NOMET",
+      "FOTO 3BLN",
+      "HASIL PEMERIKSAAN",
+      "STAN_VERIFIKASI",
+      "TINDAK LANJUT",
+    ];
+
+    // Common render functions
+    function getVisibleColumns(includeAP2T = true, includeVerifikasi = false) {
+      const visibleColumns = [];
+      baseColumns.forEach((col) => {
+        if (col === "HASIL PEMERIKSAAN") {
+          if (includeAP2T) {
+            visibleColumns.push("FOTO 3BLN AP2T");
+          }
+          if (includeVerifikasi) {
+            visibleColumns.push("VERIFIKASI");
+          }
+        }
+        visibleColumns.push(col);
+      });
+      return visibleColumns;
+    }
+
+    function renderTableHeader(visibleColumns, currentSort) {
+      $("#detailTableHead").empty();
+      let headerRow = "<tr><th>No</th>";
+      visibleColumns.forEach(function (col) {
+        headerRow += `<th class="sortable-header" data-column="${col}"> ${col} <span class="sort-icon float-end"> ${
+          currentSort.column === col
+            ? currentSort.direction === "asc"
+              ? '<i class="bi bi-sort-up"></i>'
+              : '<i class="bi bi-sort-down"></i>'
+            : '<i class="bi bi-arrow-down-up" style="opacity: 0.3;"></i>'
+        } </span> </th>`;
+      });
+      headerRow += "<th>DATA DETAIL</th></tr>";
+      $("#detailTableHead").append(headerRow);
+    }
+
+    function renderTableBody(data, visibleColumns) {
+      $("#detailTableBody").empty();
+      data.forEach(function (row, index) {
+        let tr = `<tr><td>${index + 1}</td>`;
+        visibleColumns.forEach(function (col) {
+          if (col === "HASIL PEMERIKSAAN") {
+            tr += '<td><select name="hasil_' + row["IDPEL"] + '" class="form-select form-select-sm">';
+            tr += '<option value="">-</option>';
+            hasilOptions.forEach(function (opt) {
+              const selected = row[col] === opt ? "selected" : "";
+              tr += `<option value="${opt}" ${selected}>${opt}</option>`;
+            });
+            tr += "</select></td>";
+          } else if (col === "STAN_VERIFIKASI") {
+            const val = row[col] || "";
+            tr += `<td><input type="text" class="form-control form-control-sm stan-verifikasi-input" data-idpel="${row["IDPEL"]}" value="${val}"></td>`;
+          } else if (col === "TINDAK LANJUT") {
+            let val = row[col] || "";
+            tr += `<td><textarea name="tindak_${row["IDPEL"]}" rows="2" class="form-control form-control-sm">${val}</textarea></td>`;
+          } else if (col === "FOTO 3BLN AP2T") {
+            tr += `<td> <button type="button" class="btn btn-sm btn-warning foto-3bln-ap2t-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" onclick="open3FotoAP2T('${row["IDPEL"]}', '${row["BLTH"]}')"> <i class="fas fa-image"></i> Link AP2T </button> </td>`;
+          } else if (col === "VERIFIKASI") {
+            tr += `<td> <button type="button" class="btn btn-sm btn-info foto-3bln-ap2t-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"] || ""}"> <i class="fas fa-check-circle"></i> VERIFIED </button> </td>`;
+          } else if (col === "FOTO 3BLN") {
+            let fotoHtml = row[col] || "";
+            fotoHtml = fotoHtml.replace(
+              /<a\b([^>]*)>/,
+              `<a class="foto-3bln-link" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" $1>`
+            );
+            tr += `<td>${fotoHtml}</td>`;
+          } else {
+            tr += `<td>${row[col] !== null && row[col] !== undefined ? row[col] : ""}</td>`;
+          }
+        });
+        tr += `<td><button class="btn btn-sm btn-info detail-plg-btn" data-idpel="${row["IDPEL"]}"> <i class="fas fa-info-circle"></i> Detail </button></td></tr>`;
+        $("#detailTableBody").append(tr);
+      });
+    }
+
+    function setupSorting(originalData, visibleColumns) {
+      let currentSort = { column: null, direction: "asc" };
+      
+      $(document).off("click", ".sortable-header");
+      $(document).on("click", ".sortable-header", function () {
+        const columnName = $(this).data("column");
+        if (currentSort.column === columnName) {
+          currentSort.direction = currentSort.direction === "asc" ? "desc" : "asc";
+        } else {
+          currentSort.column = columnName;
+          currentSort.direction = "asc";
+        }
+        const sortedData = [...originalData].sort((a, b) => {
+          const valA = a[columnName];
+          const valB = b[columnName];
+          if (valA === valB) return 0;
+          if (valA === null || valA === undefined) return 1;
+          if (valB === null || valB === undefined) return -1;
+          if (!isNaN(valA) && !isNaN(valB)) {
+            return currentSort.direction === "asc"
+              ? parseFloat(valA) - parseFloat(valB)
+              : parseFloat(valB) - parseFloat(valA);
+          }
+          return currentSort.direction === "asc"
+            ? String(valA).localeCompare(String(valB))
+            : String(valB).localeCompare(String(valA));
+        });
+        renderTableHeader(visibleColumns, currentSort);
+        renderTableBody(sortedData, visibleColumns);
+        typeof highlightModalTable === "function" && highlightModalTable();
+      });
+
+      return currentSort;
+    }
+
+    // // Handler for detail-link (Hari Baca)
+    // $(".detail-link").on("click", function (e) {
+    //   e.preventDefault();
+    //   let blth = $(this).data("blth");
+    //   let kdkelompok = $(this).data("kdkelompok");
+    //   let hasil_pemeriksaan = $(this).data("hasilpemeriksaan");
+    //   let table = $(this).data("table");
+    //   let unitup = $(this).data("unitup");
+    //   let dlpd_hitung = $(this).data("dlpd");
+      
+    //   $("#detailModal").attr("data-table", table);
+    //   $("#detailTable").attr("data-table", table);
+    //   $("#detailModalLabel").text(
+    //     `Detail Pelanggan untuk ${blth} - ${kdkelompok} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+    //   );
+    //   $("#detailTableHead, #detailTableBody").empty();
+
+    //   $.ajax({
+    //     url: "{{ url_for('monitoring.get_detail_pelanggan_dlpd_hb') }}",
+    //     method: "GET",
+    //     data: {
+    //       blth: blth,
+    //       kdkelompok: kdkelompok,
+    //       hasil_pemeriksaan: hasil_pemeriksaan,
+    //       table: table,
+    //       dlpd_hitung: dlpd_hitung,
+    //       unitup: unitup,
+    //     },
+    //     success: function (response) {
+    //       const visibleColumns = getVisibleColumns(true, false);
+    //       let originalData = response.data;
+    //       let currentSort = { column: null, direction: "asc" };
+          
+    //       renderTableHeader(visibleColumns, currentSort);
+    //       renderTableBody(originalData, visibleColumns);
+    //       currentSort = setupSorting(originalData, visibleColumns);
+          
+    //       typeof highlightModalTable === "function" && highlightModalTable();
+    //       let modal = new bootstrap.Modal(document.getElementById("detailModal"));
+    //       modal.show();
+    //     },
+    //     error: function () {
+    //       alert("❌ Gagal akses database, periksa user Anda.");
+    //     },
+    //   });
+    // });
+
+// ✅ SOLUSI: Gunakan Event Delegation dengan $(document).on()
+// Letakkan ini di dalam $(document).ready()
+
+$(document).on("click", ".detail-link", function (e) {
+  e.preventDefault();
+  e.stopPropagation(); // Prevent event bubbling
+  
+  console.log("🖱️ Detail link clicked!");
+  
+  // Ambil data dari atribut data-*
+  let blth = $(this).data("blth");
+  let kdkelompok = $(this).data("kdkelompok");
+  let hasil_pemeriksaan = $(this).data("hasilpemeriksaan") || "";
+  let table = $(this).data("table");
+  let unitup = $(this).data("unitup") || "";
+  let dlpd_hitung = $(this).data("dlpd") || "";
+  
+  console.log("📤 Request data:", { blth, kdkelompok, table, unitup });
+  
+  // Validasi data
+  if (!blth || !kdkelompok || !table) {
+    alert("❌ Data tidak lengkap! BLTH, KDKELOMPOK, dan TABLE wajib ada.");
+    return false;
+  }
+  
+  // Set modal attributes
+  $("#detailModal").attr("data-table", table);
+  $("#detailTable").attr("data-table", table);
+  $("#detailModalLabel").text(
+    `Detail Pelanggan untuk ${blth} - ${kdkelompok} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+  );
+  
+  // Clear table
+  $("#detailTableHead, #detailTableBody").empty();
+  
+  // Show loading
+  $("#detailTableBody").html(
+    '<tr><td colspan="15" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Memuat data...</p></td></tr>'
+  );
+  
+  // Show modal immediately with loading state
+  let modal = new bootstrap.Modal(document.getElementById("detailModal"));
+  modal.show();
+
+  // AJAX request
+  $.ajax({
+    url: "/monitoring/get_detail_pelanggan_dlpd_hb",
+    method: "GET",
+    data: {
+      blth: blth,
+      kdkelompok: kdkelompok,
+      hasil_pemeriksaan: hasil_pemeriksaan,
+      table: table,
+      dlpd_hitung: dlpd_hitung,
+      unitup: unitup,
+    },
+    success: function (response) {
+      console.log("✅ Response received:", response);
+      
+      if (!response.data || response.data.length === 0) {
+        $("#detailTableBody").html(
+          '<tr><td colspan="15" class="text-center text-warning">⚠️ Data tidak ditemukan</td></tr>'
+        );
+        return;
+      }
+      
+      const visibleColumns = getVisibleColumns(true, false);
+      let originalData = response.data;
+      let currentSort = { column: null, direction: "asc" };
+      
+      renderTableHeader(visibleColumns, currentSort);
+      renderTableBody(originalData, visibleColumns);
+      setupSorting(originalData, visibleColumns);
+      
+      if (typeof highlightModalTable === "function") {
+        highlightModalTable();
+      }
+    },
+    error: function (xhr, status, error) {
+      console.error("❌ AJAX Error:", { xhr, status, error });
+      console.error("❌ Response:", xhr.responseText);
+      
+      $("#detailTableBody").html(
+        '<tr><td colspan="15" class="text-center text-danger">❌ Gagal memuat data: ' + 
+        (xhr.responseJSON?.error || error) + 
+        '</td></tr>'
+      );
+    },
+  });
+  
+  return false; // Prevent default action
+});
+
+    // Handler for detail-link (Hari Baca)
+$(".detail-link").on("click", function (e) {
+  e.preventDefault();
+  
+  let blth = $(this).data("blth");
+  let kdkelompok = $(this).data("kdkelompok");
+  let hasil_pemeriksaan = $(this).data("hasilpemeriksaan");
+  let table = $(this).data("table");
+  let unitup = $(this).data("unitup");
+  let dlpd_hitung = $(this).data("dlpd");
+  
+  console.log("🔍 Clicked data:", { blth, kdkelompok, hasil_pemeriksaan, table, unitup });
+  
+  $("#detailModal").attr("data-table", table);
+  $("#detailTable").attr("data-table", table);
+  $("#detailModalLabel").text(
+    `Detail Pelanggan untuk ${blth} - ${kdkelompok} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+  );
+  $("#detailTableHead, #detailTableBody").empty();
+
+  $.ajax({
+    url: "{{ url_for('monitoring.get_detail_pelanggan_dlpd_hb') }}",
+    method: "GET",
+    data: {
+      blth: blth,
+      kdkelompok: kdkelompok,
+      hasil_pemeriksaan: hasil_pemeriksaan,
+      table: table,
+      dlpd_hitung: dlpd_hitung,
+      unitup: unitup,  // ✅ PENTING: Kirim unitup
+    },
+    success: function (response) {
+      console.log("✅ Response received:", response);
+      
+      const visibleColumns = getVisibleColumns(true, false);
+      let originalData = response.data;
+      let currentSort = { column: null, direction: "asc" };
+      
+      renderTableHeader(visibleColumns, currentSort);
+      renderTableBody(originalData, visibleColumns);
+      currentSort = setupSorting(originalData, visibleColumns);
+      
+      typeof highlightModalTable === "function" && highlightModalTable();
+      let modal = new bootstrap.Modal(document.getElementById("detailModal"));
+      modal.show();
+    },
+    error: function (xhr, status, error) {
+      console.error("❌ AJAX Error:", { xhr, status, error });
+      console.error("❌ Response Text:", xhr.responseText);
+      
+      alert("❌ Gagal memuat data: " + (xhr.responseJSON?.error || error));
+    },
+  });
+});
+
+    // Handler for detail-link_dlpd
+    $(".detail-link_dlpd").on("click", function (e) {
+      e.preventDefault();
+      const dlpd_hitung = $(this).data("dlpd");
+      const hasil_pemeriksaan = $(this).data("hasilpemeriksaan") || "";
+      const table = $(this).data("table");
+      const unitup = $(this).data("unitup");
+      
+      if (!table || !dlpd_hitung) {
+        alert("❌ Parameter table dan DLPD wajib ada");
+        return;
+      }
+      
+      $("#detailModal").attr("data-table", table);
+      $("#detailTable").attr("data-table", table);
+      $("#detailModalLabel").text(
+        `Detail Pelanggan ${dlpd_hitung} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+      );
+      $("#detailTableHead, #detailTableBody").empty();
+
+      $.ajax({
+        url: "{{ url_for('monitoring.get_detail_pelanggan_dlpd') }}",
+        method: "GET",
+        data: {
+          dlpd_hitung: dlpd_hitung,
+          hasil_pemeriksaan: hasil_pemeriksaan,
+          table: table,
+          unitup: unitup,
+        },
+        success: function (response) {
+          const visibleColumns = getVisibleColumns(true, false);
+          let originalData = response.data;
+          let currentSort = { column: null, direction: "asc" };
+          
+          renderTableHeader(visibleColumns, currentSort);
+          renderTableBody(originalData, visibleColumns);
+          currentSort = setupSorting(originalData, visibleColumns);
+          
+          typeof highlightModalTable === "function" && highlightModalTable();
+          const modal = new bootstrap.Modal(document.getElementById("detailModal"));
+          modal.show();
+        },
+        error: function (xhr) {
+          console.error("Error:", xhr.responseText);
+          $("#detailTableBody").html(
+            '<tr><td colspan="15" class="text-center text-danger">Gagal memuat data: ' +
+              (xhr.responseJSON?.error || xhr.statusText) +
+              "</td></tr>"
+          );
+        },
+      });
+    });
+
+    // Handler for detail-link_ganda
+    $(".detail-link_ganda").on("click", function (e) {
+      e.preventDefault();
+      const dlpd_hitung = $(this).data("dlpd");
+      const hasil_pemeriksaan = $(this).data("hasilpemeriksaan") || "";
+      const table = $(this).data("table");
+      const unitup = $(this).data("unitup");
+      
+      if (!table || !dlpd_hitung) {
+        alert("❌ Parameter table dan DLPD wajib ada");
+        return;
+      }
+      
+      $("#detailModal").attr("data-table", table);
+      $("#detailTable").attr("data-table", table);
+      $("#detailModalLabel").text(
+        `Detail Pelanggan ${dlpd_hitung} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+      );
+      $("#detailTableHead, #detailTableBody").empty();
+      
+      $.ajax({
+        url: "{{ url_for('monitoring.get_detail_pelanggan_ganda') }}",
+        method: "GET",
+        data: {
+          dlpd_hitung: dlpd_hitung,
+          hasil_pemeriksaan: hasil_pemeriksaan,
+          table: table,
+          unitup: unitup,
+        },
+        success: function (response) {
+          const visibleColumns = getVisibleColumns(false, true);
+          let originalData = response.data;
+          let currentSort = { column: null, direction: "asc" };
+          
+          renderTableHeader(visibleColumns, currentSort);
+          renderTableBody(originalData, visibleColumns);
+          currentSort = setupSorting(originalData, visibleColumns);
+          
+          typeof highlightModalTable === "function" && highlightModalTable();
+          const modal = new bootstrap.Modal(document.getElementById("detailModal"));
+          modal.show();
+        },
+        error: function (xhr) {
+          console.error("Error:", xhr.responseText);
+          $("#detailTableBody").html(
+            '<tr><td colspan="15" class="text-center text-danger">Gagal memuat data: ' +
+              (xhr.responseJSON?.error || xhr.statusText) +
+              "</td></tr>"
+          );
+        },
+      });
+    });
+
+    // Handler for detail-link_koreksi
+    $(".detail-link_koreksi").on("click", function (e) {
+      e.preventDefault();
+      let blth = $(this).data("blth");
+      let kdkelompok = $(this).data("kdkelompok");
+      let hasil_pemeriksaan = $(this).data("hasilpemeriksaan");
+      let table = $(this).data("table");
+      let unitup = $(this).data("unitup");
+      let dlpd_hitung = $(this).data("dlpd");
+      
+      if (!table || !blth || !kdkelompok) {
+        alert("❌ Parameter table, BLTH, dan KDKELOMPOK wajib ada");
+        return;
+      }
+      
+      $("#detailModal").attr("data-table", table);
+      $("#detailTable").attr("data-table", table);
+      $("#detailModalLabel").text(
+        `Detail Pelanggan untuk ${blth} - ${kdkelompok} (Status: ${hasil_pemeriksaan || "BELUM DIISI"})`
+      );
+      $("#detailTableHead, #detailTableBody").empty();
+
+      $.ajax({
+        url: "{{ url_for('monitoring.get_detail_pelanggan_koreksi') }}",
+        method: "GET",
+        data: {
+          blth: blth,
+          kdkelompok: kdkelompok,
+          hasil_pemeriksaan: hasil_pemeriksaan,
+          table: table,
+          dlpd_hitung: dlpd_hitung,
+          unitup: unitup,
+        },
+        success: function (response) {
+          const visibleColumns = getVisibleColumns(true, false);
+          let originalData = response.data;
+          let currentSort = { column: null, direction: "asc" };
+          
+          renderTableHeader(visibleColumns, currentSort);
+          renderTableBody(originalData, visibleColumns);
+          currentSort = setupSorting(originalData, visibleColumns);
+          
+          typeof highlightModalTable === "function" && highlightModalTable();
+          let modal = new bootstrap.Modal(document.getElementById("detailModal"));
+          modal.show();
+        },
+        error: function () {
+          alert("❌ Gagal akses database, periksa user Anda.");
+        },
+      });
+    });
+
+    // Event handler for foto links
+    $(document).on("click", ".foto-3bln-link, .foto-3bln-ap2t-btn", function (e) {
+      e.preventDefault();
+      const idpel = $(this).data("idpel");
+      const sahlwbp = ($(this).data("sahlwbp") || "").toString();
+      updateStanVerifikasiDanHasil(idpel, sahlwbp);
+    });
+
+    // Detail pelanggan button handler
+    $(document).on("click", ".detail-plg-btn", function () {
+      const button = $(this);
+      const idpel = button.data("idpel");
+      const table = $("#detailModal").attr("data-table");
+      
+      if (!table) {
+        alert("❌ Table tidak ditemukan. Silakan buka ulang modal induk.");
+        return;
+      }
+      
+      if (button.hasClass("loading")) return;
+      button.addClass("loading").prop("disabled", true);
+      
+      const detailModalEl = document.createElement("div");
+      detailModalEl.className = "modal fade";
+      detailModalEl.innerHTML = `<div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Loading...</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Memuat detail pelanggan...</p></div></div></div>`;
+      document.body.appendChild(detailModalEl);
+      const detailModal = new bootstrap.Modal(detailModalEl);
+      detailModal.show();
+      
+      const cleanup = () => {
+        button.removeClass("loading").prop("disabled", false);
+        if (document.body.contains(detailModalEl)) {
+          document.body.removeChild(detailModalEl);
+        }
+      };
+      
+      const fetchTimer = setTimeout(() => {
+        if (!detailModalEl.querySelector(".modal-body").innerHTML.includes("alert")) {
+          detailModalEl.querySelector(".modal-body").innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> Request timeout</div>`;
+        }
+      }, 60000);
+      
+      $.ajax({
+        url: "{{ url_for('monitoring.get_full_customer_detail') }}",
+        method: "GET",
+        data: { idpel: idpel, table: table },
+        success: function (response) {
+          clearTimeout(fetchTimer);
+          if (!response.data) {
+            detailModalEl.querySelector(".modal-body").innerHTML = `<div class="alert alert-warning"><i class="fas fa-info-circle"></i> Data pelanggan tidak ditemukan.</div>`;
+            return;
+          }
+          let detailHtml = `<div class="container-fluid"><h5 class="mb-3">Detail Pelanggan ${idpel}</h5><div class="table-responsive"><table class="table table-sm table-bordered table-striped"><tbody>`;
+          const data = response.data;
+          const orderedKeys = [
+            "BLTH", "IDPEL", "NAMA", "TARIF", "DAYA", "SLALWBP", "LWBPCABUT",
+            "SELISIH STAN BONGKAR", "LWBP PASANG", "KWH SEKARANG", "KWH 1 BULAN LALU",
+            "KWH 2 BULAN LALU", "DELTA PEMKWH", "%", "JAM NYALA", "DLPD", "DLPD_3BLN",
+            "DLPD_HITUNG", "SAHLWBP", "STAN_VERIFIKASI", "NOMET", "FOTO AKHIR",
+            "FOTO LALU", "FOTO LALU2", "FOTO 3BLN", "HASIL PEMERIKSAAN",
+            "TINDAK LANJUT", "KET", "JAMNYALA600", "KDKELOMPOK", "MARKING_KOREKSI",
+          ];
+          orderedKeys.forEach((key) => {
+            const value = data[key];
+            if (value === null || value === "") return;
+            let displayValue = value;
+            if (key === "FOTO 3BLN") {
+              displayValue = value.includes("http")
+                ? `<a href="${value}" target="_blank" class="btn btn-sm btn-outline-primary">View FOTO 3BLN</a>`
+                : value;
+            }
+            detailHtml += `<tr><th style="width:30%" class="text-nowrap text-start">${key.replace(/_/g, " ")}</th><td class="text-start">${displayValue}</td></tr>`;
+          });
+          detailHtml += `</tbody></table></div></div>`;
+          detailModalEl.querySelector(".modal-title").innerText = `Detail Pelanggan ${idpel}`;
+          detailModalEl.querySelector(".modal-body").innerHTML = detailHtml;
+        },
+        error: function (xhr) {
+          clearTimeout(fetchTimer);
+          detailModalEl.querySelector(".modal-body").innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Gagal memuat detail pelanggan: ${xhr.responseJSON?.error || xhr.statusText}</div>`;
+        },
+      });
+      
+      detailModalEl.addEventListener("hidden.bs.modal", function () {
+        cleanup();
+      });
+    });
+
+    // Save changes button
+    $("#saveChangesBtn").on("click", function () {
+      const btn = $(this);
+      let updates = [];
+      let tableName = $("#detailModal").attr("data-table");
+
+      $("#detailTableBody tr").each(function () {
+        let row = $(this);
+        let idpel = row.find("select[name^='hasil_']").attr("name").split("_")[1] ||
+                    row.find("input.stan-verifikasi-input").data("idpel");
+        let hasil = row.find(`select[name="hasil_${idpel}"]`).val();
+        let tindak = row.find(`textarea[name="tindak_${idpel}"]`).val();
+        let stan_verifikasi = row.find(`input.stan-verifikasi-input[data-idpel="${idpel}"]`).val() || "";
+        
+        updates.push({
+          IDPEL: idpel,
+          HASIL: hasil,
+          TINDAK: tindak,
+          STAN: stan_verifikasi,
+        });
+      });
+
+      btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...');
+
+      $.ajax({
+        url: "{{ url_for('monitoring.update_hasil_pemeriksaan') }}",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ table: tableName, updates: updates }),
+        success: function (response) {
+          alert("✅ Data berhasil disimpan!");
+          location.reload();
+        },
+        error: function () {
+          alert("❌ Gagal menyimpan data.");
+          btn.prop("disabled", false).html("Simpan Perubahan");
+        },
+      });
+    });
+  });
+</script>
+{% endblock javascripts %}

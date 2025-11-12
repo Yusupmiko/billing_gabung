@@ -132,6 +132,14 @@
                     <i class="bi bi-graph-up"></i> Dashboard UP3
                 </a>
             </li>
+   <!-- 🔍 Tambahan: Dashboard Monitoring -->
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+
+            <i class="bi bi-bar-chart-line"></i> Dashboard Monitoring
+        </a>
+    </li>
+
             <li class="nav-item">
                 <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
                     <i class="bi bi-clock-history"></i> Audit Log
@@ -199,10 +207,10 @@
                 {% block content %}{% endblock %}
             </div>
         </div>
-    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    {% block extra_js %}{% endblock %}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        {% block javascripts %}{% endblock %}
 </body>
 </html>
