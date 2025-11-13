@@ -207,26 +207,26 @@ class MonitoringService:
 
         # 🔁 Normalisasi nama DLPD agar seragam dengan dashboard
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur',
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
             'TURUN<50%': 'TURUN<50%'
         }
 
         # Daftar kategori (baris pivot) default
         rows = [
-            'JN_720up',
-            'Cek_Pecahan',
-            'Stan_Mundur',
-            'Naik_50%Up',
-            'Cek_DIV/NA',
+            'JN>720',
+            'PECAHAN',
+            'STAN MUNDUR',
+            'NAIK>50%',
+            'DIV/NA',
             'TURUN<50%',
-            'kWh_Nol',
-            'JN_40Down'
+            'KWH NOL',
+            'JN<40'
         ]
 
         # ✅ PERBAIKAN: Buat struktur pivot kosong untuk SEMUA rows
@@ -302,25 +302,25 @@ class MonitoringService:
         
         # ✅ PERBAIKAN: Gunakan mapping yang sama seperti generate_pivot_dlpd_hitung
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur',
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
             'TURUN<50%': 'TURUN<50%'
         }
         
         rows = [
-            'JN_720up', 
-            'Cek_Pecahan', 
-            'Stan_Mundur', 
-            'Naik_50%Up',
-            'Cek_DIV/NA', 
-            'TURUN<50%',  # ✅ PERBAIKAN: Ganti dari 'Turun_50%Down'
-            'kWh_Nol', 
-            'JN_40Down', 
+            'JN>720',
+            'PECAHAN',
+            'STAN MUNDUR',
+            'NAIK>50%',
+            'DIV/NA',
+            'TURUN<50%',
+            'KWH NOL',
+            'JN<40',
             ''  # Untuk data kosong
         ]
         
@@ -373,14 +373,14 @@ class MonitoringService:
         Get reverse mapping from display name to database name
         """
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur', 
-            'TURUN<50%': 'TURUN<50%' 
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
+            'TURUN<50%': 'TURUN<50%'
         }
         # Membalikkan mapping: {frontend_label: db_value}
         return {v: k for k, v in dlpd_mapping.items()}
