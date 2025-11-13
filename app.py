@@ -27,6 +27,7 @@ from flask import Flask, request, send_file, jsonify, session, render_template
 from sqlalchemy import create_engine, text
 from openpyxl.styles import Font, PatternFill
 
+
 # app.py
 from monitoring import monitoring_bp
 

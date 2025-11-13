@@ -2,6 +2,7 @@
 Monitoring Routes Module
 Flask routes for monitoring dashboard with dynamic table access
 """
+from flask import redirect, url_for, request, render_template, session
 
 from flask import Blueprint, render_template, request, jsonify, session
 from functools import wraps
@@ -230,14 +231,24 @@ def dashboard_monitoring():
     # Check if admin
     is_admin = unitup == 'UP3' or 'Administrator' in str(nama_ulp) or 'UP3' in str(nama_ulp).upper()
     
+    # # Get filter parameters from request
+    # selected_unitup = request.args.get('unitup')
+    # selected_blth = request.args.get('blth')
+    
+    # # Get latest BLTH if not selected
+    # if not selected_blth:
+    #     selected_blth = get_latest_blth()
     # Get filter parameters from request
     selected_unitup = request.args.get('unitup')
-    selected_blth = request.args.get('blth')
-    
-    # Get latest BLTH if not selected
-    if not selected_blth:
-        selected_blth = get_latest_blth()
-    
+    selected_blth = request.args.get('blth')  # None if not present
+
+    # If blth param is missing entirely, redirect to same route with default blth
+    if 'blth' not in request.args:
+        default_blth = get_latest_blth()  # ambil BLTH terbaru
+        # preserve unitup in URL (could be None or empty string)
+        # jika fungsi ada di blueprint gunakan '.dashboard_monitoring' atau sesuaikan endpoint
+        return redirect(url_for('.dashboard_monitoring', unitup=selected_unitup or '', blth=default_blth))
+
     # Get available options for filters
     available_blth = get_available_blth_list()
     available_unitup = get_available_unitup_list() if is_admin else []
@@ -459,29 +470,68 @@ def search_idpel():
 def get_full_customer_detail():
     """Get full customer details by IDPEL"""
     from .monitoring_service import MonitoringService
-    monitoring = MonitoringService(get_db_connection2)
-    
+
+    # 1) ambil blth dari querystring (boleh None)
+    blth = request.args.get('blth')
+
+    # 2) instantiate MonitoringService dengan blth (sesuaikan signature jika berbeda)
+    monitoring = MonitoringService(get_db_connection2, None, blth)
+
     try:
         idpel = request.args.get('idpel')
         table = request.args.get('table')
         username = session.get('username', '')
-        
+
         if not idpel:
             return jsonify({'error': 'IDPEL parameter is required'}), 400
-        
+
+        if not table:
+            return jsonify({'error': 'Table parameter is required'}), 400
+
         base_table = table.replace('_marking', '')
         if not validate_table_access(username, base_table):
             return jsonify({'error': 'Akses ditolak ke tabel ini'}), 403
-        
+
+        # Jika MonitoringService.search_customer_by_idpel membutuhkan blth eksplisit,
+        # ubah pemanggilan di bawah menjadi: monitoring.search_customer_by_idpel(table, idpel, blth)
         data = monitoring.search_customer_by_idpel(table, idpel)
-        
+
         if not data:
             return jsonify({'error': 'Customer not found'}), 404
-        
-        return jsonify({'data': data})
-    
+
+        # Sertakan blth di response agar front-end dapat membangun grafik dengan periode yang sama
+        return jsonify({'data': data, 'blth': blth})
     except Exception as e:
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+# @monitoring_bp.route('/get_full_customer_detail')
+# @login_required
+# def get_full_customer_detail():
+#     """Get full customer details by IDPEL"""
+#     from .monitoring_service import MonitoringService
+#     monitoring = MonitoringService(get_db_connection2)
+    
+#     try:
+#         idpel = request.args.get('idpel')
+#         table = request.args.get('table')
+#         username = session.get('username', '')
+        
+#         if not idpel:
+#             return jsonify({'error': 'IDPEL parameter is required'}), 400
+        
+#         base_table = table.replace('_marking', '')
+#         if not validate_table_access(username, base_table):
+#             return jsonify({'error': 'Akses ditolak ke tabel ini'}), 403
+        
+#         data = monitoring.search_customer_by_idpel(table, idpel)
+        
+#         if not data:
+#             return jsonify({'error': 'Customer not found'}), 404
+        
+#         return jsonify({'data': data})
+    
+#     except Exception as e:
+#         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
     
 # ==================== UPDATE ROUTE ====================
 # Di monitoring_routes.py
