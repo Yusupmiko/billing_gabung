@@ -623,6 +623,19 @@ function renderModalTable(data, type) {
   // ================================================================
   // EVENT: Detail Pelanggan Button - ✅ WITH GRAFIK
   // ================================================================
+  function getBlthFromUrlOrSelect() {
+  try {
+    const url = new URL(window.location.href);
+    const q = url.searchParams.get('blth');
+    if (q) return q;
+  } catch (err) {
+    // ignore invalid URL
+  }
+  const sel = document.querySelector('#blthFilter');
+  if (sel) return sel.value;
+  return '';
+}
+
   $(document).on("click", ".detail-plg-btn", function () {
     const button = $(this);
     const idpel = button.data("idpel");
@@ -686,15 +699,20 @@ function renderModalTable(data, type) {
           </div>`;
       }
     }, 60000);
+    const blthParam = getBlthFromUrlOrSelect();
 
     $.ajax({
       url: "/monitoring/get_full_customer_detail",
       method: "GET",
+
       data: { 
-        idpel: idpel, 
-        table: table,
-        unitup: params.unitup  // ✅ KIRIM UNITUP
-      },
+    idpel: idpel, 
+    table: table,
+    unitup: params.unitup,
+    blth: blthParam
+},
+
+
       success: function (response) {
         clearTimeout(fetchTimer);
 

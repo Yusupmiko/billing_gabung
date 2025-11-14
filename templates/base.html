@@ -124,48 +124,59 @@
 </head>
 <body>
     <div class="d-flex">
-        <!-- Compact Sidebar -->
-        <div class="sidebar text-white">
-            <h4><i class="bi bi-lightning-charge-fill"></i> Billing Tunggal</h4>
-            <ul class="nav flex-column">
-                {% if session.role == 'UP3' %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('kelola_user') }}">
-                            <i class="bi bi-people"></i> Kelola User
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('dashboard_up3') }}">
-                            <i class="bi bi-graph-up"></i> Dashboard UP3
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
-                            <i class="bi bi-bar-chart-line"></i> Pemeriksaan 1336.K/DIR/2011
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                            <i class="bi bi-clock-history"></i> Audit Log
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('dashboard_ulp') }}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
-                            <i class="bi bi-table"></i> Data Billing
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                            <i class="bi bi-clock-history"></i> Audit Log
-                        </a>
-                    </li>
-                {% endif %}
+  <!-- Compact Sidebar -->
+<div class="sidebar text-white">
+    <h4><i class="bi bi-lightning-charge-fill"></i> Billing PLN</h4>
+    <ul class="nav flex-column">
+
+        {% if session.role == 'UP3' %}
+            <!-- Hanya tampil untuk role UP3 -->
+
+  <li class="nav-item">
+    <a class="nav-link text-white" href="{{ url_for('kelola_user') }}">
+        <i class="bi bi-people"></i> Kelola User
+    </a>
+</li>
+
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{{ url_for('dashboard_up3') }}">
+                    <i class="bi bi-graph-up"></i> Dashboard UP3
+                </a>
+            </li>
+   <!-- 🔍 Tambahan: Dashboard Monitoring -->
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+
+            <i class="bi bi-bar-chart-line"></i> Dashboard Monitoring
+        </a>
+    </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
+                    <i class="bi bi-clock-history"></i> Audit Log
+                </a>
+            </li>
+        {% else %}
+            <!-- Tampil untuk role selain UP3 -->
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{{ url_for('dashboard_ulp') }}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
+                    <i class="bi bi-table"></i> Data Billing
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
+                    <i class="bi bi-clock-history"></i> Audit Log
+                </a>
+            </li>
+
+
+
+        {% endif %}
 
                 <li class="nav-item" style="margin-top: 15px;">
                     <a class="nav-link text-white" href="{{ url_for('logout') }}">
