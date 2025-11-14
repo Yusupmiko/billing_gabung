@@ -1383,7 +1383,7 @@ Snapbil{% endblock title %} {% block stylesheets %}
           });
           const blth = data["BLTH"] || "";
           let ulp = "";
-          if (table.includes("billing_")) {
+          if (table.includes("billing_")) { tambah fitur export excel untuk data yg SAHLWBP tidak sama dengan stan verifikasi
             ulp = table
               .replace("billing_", "")
               .replace(/[0-9]/g, "")

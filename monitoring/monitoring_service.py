@@ -111,7 +111,7 @@ class MonitoringService:
             SELECT BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN` AS status, COUNT(*) AS jumlah
             FROM {table}
             WHERE KET IN ('NAIK', 'TURUN', 'DIV/NA','AMAN')
-              AND (KDKELOMPOK IN ('1','2','3','4','5','6','7','8','P'))
+            AND (KDKELOMPOK IN ('1','2','3','4','5','6','7','8','P'))
         """
         params = []
         
@@ -119,7 +119,8 @@ class MonitoringService:
             base_query += " AND `DLPD_HITUNG` IS NOT NULL AND LENGTH(TRIM(`DLPD_HITUNG`)) > 0"
         
         base_query, params = self._add_filters(base_query, params)
-        base_query += " GROUP BY BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN`"
+        # ✅ ADDED: ORDER BY KDKELOMPOK untuk urut hari baca
+        base_query += " GROUP BY BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN` ORDER BY KDKELOMPOK ASC"
         
         cursor.execute(base_query, params)
         results = cursor.fetchall()
@@ -141,6 +142,7 @@ class MonitoringService:
         
         return pivot, sorted(statuses)
     
+   
     def generate_pivot_status_koreksi(self, table, filter_marking=False):
         """
         Generate pivot for correction data (MARKING_KOREKSI > 0)
@@ -152,12 +154,13 @@ class MonitoringService:
             SELECT BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN` AS status, COUNT(*) AS jumlah
             FROM `{table}`
             WHERE MARKING_KOREKSI > 0
-              AND KDKELOMPOK IN ('1','2','3','4','5','6','7','8','P')
+            AND KDKELOMPOK IN ('1','2','3','4','5','6','7','8','P')
         """
         params = []
         
         base_query, params = self._add_filters(base_query, params)
-        base_query += " GROUP BY BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN`"
+        # ✅ ADDED: ORDER BY KDKELOMPOK untuk koreksi juga
+        base_query += " GROUP BY BLTH, KDKELOMPOK, `HASIL_PEMERIKSAAN` ORDER BY KDKELOMPOK ASC"
         
         cursor.execute(base_query, params)
         results = cursor.fetchall()
@@ -178,6 +181,7 @@ class MonitoringService:
             pivot[label][status] = pivot[label].get(status, 0) + jumlah
         
         return pivot, sorted(statuses)
+    
     
     def generate_pivot_dlpd_hitung(self, table, filter_marking=True):
         """
@@ -198,7 +202,8 @@ class MonitoringService:
             base_query += " AND `DLPD_HITUNG` IS NOT NULL AND LENGTH(TRIM(`DLPD_HITUNG`)) > 0"
 
         base_query, params = self._add_filters(base_query, params)
-        base_query += " GROUP BY `DLPD_HITUNG`, `HASIL_PEMERIKSAAN`"
+        # ✅ ADDED: ORDER BY untuk konsistensi urutan data
+        base_query += " GROUP BY `DLPD_HITUNG`, `HASIL_PEMERIKSAAN` ORDER BY `DLPD_HITUNG`, `HASIL_PEMERIKSAAN`"
 
         cursor.execute(base_query, params)
         results = cursor.fetchall()
@@ -207,26 +212,26 @@ class MonitoringService:
 
         # 🔁 Normalisasi nama DLPD agar seragam dengan dashboard
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur',
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
             'TURUN<50%': 'TURUN<50%'
         }
 
-        # Daftar kategori (baris pivot) default
+        # Daftar kategori (baris pivot) default - SUDAH TERURUT
         rows = [
-            'JN_720up',
-            'Cek_Pecahan',
-            'Stan_Mundur',
-            'Naik_50%Up',
-            'Cek_DIV/NA',
+            'JN>720',
+            'PECAHAN',
+            'STAN MUNDUR',
+            'NAIK>50%',
+            'DIV/NA',
             'TURUN<50%',
-            'kWh_Nol',
-            'JN_40Down'
+            'KWH NOL',
+            'JN<40'
         ]
 
         # ✅ PERBAIKAN: Buat struktur pivot kosong untuk SEMUA rows
@@ -251,7 +256,6 @@ class MonitoringService:
             statuses.add(status)
 
             # ✅ CRITICAL: Pastikan mapped_dlpd ada di pivot
-            # Jika tidak ada, tambahkan (untuk data yang tidak ada di rows list)
             if mapped_dlpd not in pivot:
                 pivot[mapped_dlpd] = {}
                 print(f"⚠️ Added new category to pivot: '{mapped_dlpd}' (from '{dlpd_raw}')")
@@ -272,7 +276,6 @@ class MonitoringService:
             print(f"{dlpd}: {data} (Total: {total})")
 
         return pivot, sorted(statuses)
-
 
     def generate_pivot_ganda(self, table):
         """
@@ -302,25 +305,25 @@ class MonitoringService:
         
         # ✅ PERBAIKAN: Gunakan mapping yang sama seperti generate_pivot_dlpd_hitung
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur',
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
             'TURUN<50%': 'TURUN<50%'
         }
         
         rows = [
-            'JN_720up', 
-            'Cek_Pecahan', 
-            'Stan_Mundur', 
-            'Naik_50%Up',
-            'Cek_DIV/NA', 
-            'TURUN<50%',  # ✅ PERBAIKAN: Ganti dari 'Turun_50%Down'
-            'kWh_Nol', 
-            'JN_40Down', 
+            'JN>720',
+            'PECAHAN',
+            'STAN MUNDUR',
+            'NAIK>50%',
+            'DIV/NA',
+            'TURUN<50%',
+            'KWH NOL',
+            'JN<40',
             ''  # Untuk data kosong
         ]
         
@@ -373,14 +376,14 @@ class MonitoringService:
         Get reverse mapping from display name to database name
         """
         dlpd_mapping = {
-            'JN>720': 'JN_720up',
-            'JN<40': 'JN_40Down',
-            'PECAHAN': 'Cek_Pecahan',
-            'DIV/NA': 'Cek_DIV/NA',
-            'NAIK>50%': 'Naik_50%Up',
-            'KWH NOL': 'kWh_Nol',
-            'STAN MUNDUR': 'Stan_Mundur', 
-            'TURUN<50%': 'TURUN<50%' 
+            'JN>720': 'JN>720',
+            'JN<40': 'JN<40',
+            'PECAHAN': 'PECAHAN',
+            'DIV/NA': 'DIV/NA',
+            'NAIK>50%': 'NAIK>50%',
+            'KWH NOL': 'KWH NOL',
+            'STAN MUNDUR': 'STAN MUNDUR',
+            'TURUN<50%': 'TURUN<50%'
         }
         # Membalikkan mapping: {frontend_label: db_value}
         return {v: k for k, v in dlpd_mapping.items()}

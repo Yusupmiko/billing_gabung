@@ -1,4 +1,4 @@
-<!-- templates/base.html - COMPACT VERSION -->
+<!-- templates/base.html - FINAL FIXED VERSION -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -108,78 +108,77 @@
         p {
             margin-bottom: 6px;
         }
+        
+        /* ⭐ TAMBAHAN: Proteksi untuk input/select */
+        .verifikasi-input,
+        .verifikasi-select {
+            pointer-events: auto !important;
+            touch-action: auto !important;
+        }
+        
     </style>
+    
+    <!-- ⭐ SUPPORT CSS BLOCK untuk halaman tertentu -->
     {% block extra_css %}{% endblock %}
+    {% block stylesheets %}{% endblock %}
 </head>
 <body>
     <div class="d-flex">
-  <!-- Compact Sidebar -->
-<div class="sidebar text-white">
-    <h4><i class="bi bi-lightning-charge-fill"></i> Billing PLN</h4>
-    <ul class="nav flex-column">
+        <!-- Compact Sidebar -->
+        <div class="sidebar text-white">
+            <h4><i class="bi bi-lightning-charge-fill"></i> Billing Tunggal</h4>
+            <ul class="nav flex-column">
+                {% if session.role == 'UP3' %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('kelola_user') }}">
+                            <i class="bi bi-people"></i> Kelola User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('dashboard_up3') }}">
+                            <i class="bi bi-graph-up"></i> Dashboard UP3
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+                            <i class="bi bi-bar-chart-line"></i> Pemeriksaan 1336.K/DIR/2011
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
+                            <i class="bi bi-clock-history"></i> Audit Log
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('dashboard_ulp') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
+                            <i class="bi bi-table"></i> Data Billing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
+                            <i class="bi bi-clock-history"></i> Audit Log
+                        </a>
+                    </li>
+                {% endif %}
 
-        {% if session.role == 'UP3' %}
-            <!-- Hanya tampil untuk role UP3 -->
+                <li class="nav-item" style="margin-top: 15px;">
+                    <a class="nav-link text-white" href="{{ url_for('logout') }}">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </li>
+            </ul>
 
-  <li class="nav-item">
-    <a class="nav-link text-white" href="{{ url_for('kelola_user') }}">
-        <i class="bi bi-people"></i> Kelola User
-    </a>
-</li>
-
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('dashboard_up3') }}">
-                    <i class="bi bi-graph-up"></i> Dashboard UP3
-                </a>
-            </li>
-   <!-- 🔍 Tambahan: Dashboard Monitoring -->
-    <li class="nav-item">
-        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
-
-            <i class="bi bi-bar-chart-line"></i> Dashboard Monitoring
-        </a>
-    </li>
-
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                    <i class="bi bi-clock-history"></i> Audit Log
-                </a>
-            </li>
-        {% else %}
-            <!-- Tampil untuk role selain UP3 -->
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('dashboard_ulp') }}">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
-                    <i class="bi bi-table"></i> Data Billing
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                    <i class="bi bi-clock-history"></i> Audit Log
-                </a>
-            </li>
-
-
-
-        {% endif %}
-
-        <!-- Logout selalu muncul -->
-        <li class="nav-item" style="margin-top: 15px;">
-            <a class="nav-link text-white" href="{{ url_for('logout') }}">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
-        </li>
-    </ul>
-
-    <div class="small text-white-50">
-        User: {{ session.username }}<br>
-        ULP: {{ session.unitup or 'N/A' }}
-    </div>
-</div>
+            <div class="small text-white-50">
+                User: {{ session.username }}<br>
+                ULP: {{ session.unitup or 'N/A' }}
+            </div>
+        </div>
 
         <!-- Compact Content -->
         <div class="content-wrapper flex-grow-1">
@@ -207,10 +206,53 @@
                 {% block content %}{% endblock %}
             </div>
         </div>
-</div>
+    </div>
 
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        {% block javascripts %}{% endblock %}
+    <!-- ⭐ SCRIPTS - URUTAN YANG BENAR -->
+    
+    <!-- 1. jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- 2. Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ⭐ 3. PROTEKSI: Disable jQuery event delegation yang bisa konflik -->
+    <script>
+        console.log('🔧 base.html loaded');
+        console.log('📦 jQuery version:', typeof jQuery !== 'undefined' ? jQuery.fn.jquery : 'Not loaded');
+        console.log('📍 Current page:', window.location.pathname);
+        
+        if (typeof jQuery !== 'undefined') {
+            console.log('✅ Disabling jQuery auto-delegation to prevent conflicts');
+            
+            // ⭐ HANYA nonaktifkan untuk halaman view_billing
+            if (window.location.pathname.includes('/view_billing')) {
+                console.log('🔒 Applying jQuery protection for view_billing');
+                jQuery.event.special.click = {
+                    setup: function() { return false; }
+                };
+                jQuery.event.special.change = {
+                    setup: function() { return false; }
+                };
+                jQuery.event.special.input = {
+                    setup: function() { return false; }
+                };
+            } else {
+                console.log('✅ jQuery delegation active (normal mode)');
+            }
+        }
+    </script>
+    
+    <!-- ⭐ 4. SUPPORT KEDUA NAMA BLOCK -->
+    <!-- Block untuk dashboard_monitoring.html (pakai javascripts) -->
+    {% block javascripts %}{% endblock %}
+    
+    <!-- Block untuk view_billing.html (pakai extra_js) -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- ⭐ 5. Debug helper -->
+    <script>
+        console.log('✅ All base scripts loaded');
+    </script>
 </body>
 </html>

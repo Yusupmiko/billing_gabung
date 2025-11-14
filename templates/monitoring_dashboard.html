@@ -200,7 +200,7 @@
     <div class="card data-card mb-4">
       <div class="card-header pb-0">
         <h2 id="pivot-marking-ulps">
-          📌 Pivot Marking Kepdir 1336 (Hari Baca)
+          📌 Pemeriksaan 1336.K/DIR/2011 (Rekap Hari Baca)
         </h2>
       </div>
       <div class="card-body">
@@ -269,7 +269,7 @@
 <!-- ============================================ -->
 <div class="card data-card mb-4">
   <div class="card-header pb-0">
-    <h2>📌 Pivot Marking Kepdir 1336</h2>
+     <h2>📌 Pemeriksaan 1336.K/DIR/2011</h2>
   </div>
   <div class="card-body">
     {% for tbl, name, up_filter in tables %}
@@ -365,7 +365,7 @@
     <!-- ============================================ -->
     <!-- SECTION 3: Kumulatif Data Upload DPM -->
     <!-- ============================================ -->
-    <div class="card data-card mb-4">
+    <!-- <div class="card data-card mb-4">
       <div class="card-header pb-0">
         <h1>📁 Kumulatif Data Upload DPM</h1>
       </div>
@@ -420,7 +420,7 @@
           </table>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- ============================================ -->
     <!-- SECTION 4: Detail Data Update Koreksi -->
@@ -494,7 +494,7 @@
 <!-- ============================================ -->
 <!-- SECTION 5: Pivot PLG GANDA (JUGA PERLU DIPERBAIKI) -->
 <!-- ============================================ -->
-<div class="card data-card mb-4">
+<!-- <div class="card data-card mb-4">
   <div class="card-header pb-0">
     <h2>📌 Pivot PLG GANDA</h2>
   </div>
@@ -585,7 +585,7 @@
     <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
     {% endif %}
     {% endfor %}
-  </div>
+  </div> -->
 </div>
 
 
@@ -643,14 +643,14 @@
 
  // Debug: Log mapping yang digunakan
   const dlpd_mapping = {
-    'JN_720up': 'JN>720',
-    'JN_40Down': 'JN<40',
-    'Cek_Pecahan': 'PECAHAN',
-    'Cek_DIV/NA': 'DIV/NA',
-    'Naik_50%Up': 'NAIK>50%',
-    'kWh_Nol': 'KWH NOL',
-    'Stan_Mundur': 'STAN MUNDUR',
-    'TURUN<50%': 'TURUN<50%'
+        'Jam Nyala > 720': 'JN>720',
+        'Jam Nyala < 40': 'JN<40',
+        'Pecahan': 'PECAHAN',
+        'DIV/NA': 'DIV/NA',
+        'Naik > 50%': 'NAIK>50%',
+        'KWh Nol': 'KWH NOL',
+        'Stan Mundur': 'STAN MUNDUR',
+        'Turun < 50%': 'TURUN<50%'
   };
   
   console.log("=== DLPD MAPPING DEBUG ===");

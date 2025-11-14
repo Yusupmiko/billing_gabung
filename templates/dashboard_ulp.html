@@ -14,10 +14,11 @@
 
 <!-- Upload Forms -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
+    <!-- UPLOAD DPM BARU -->
+    <div class="col-md-4">
+        <div class="card h-100">
             <div class="card-header bg-primary text-white">
-                <i class="bi bi-cloud-upload"></i> Upload DPM
+                <i class="bi bi-cloud-upload"></i> Upload DPM Baru
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
@@ -28,8 +29,9 @@
                     <div class="mb-3">
                         <label class="form-label">File DPM (Excel)</label>
                         <input type="file" name="file_dpm" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">Upload data DPM baru</small>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-upload"></i> Upload DPM
                     </button>
                 </form>
@@ -37,8 +39,12 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card">
+    <!-- UPDATE DPM KOREKSI (FITUR BARU) -->
+  
+
+    <!-- PROSES BILLING -->
+    <div class="col-md-4">
+        <div class="card h-100">
             <div class="card-header bg-success text-white">
                 <i class="bi bi-gear"></i> Proses Billing
             </div>
@@ -49,7 +55,7 @@
                         <label class="form-label">Periode untuk diproses</label>
                         <input type="month" name="blth" class="form-control" required>
                     </div>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success w-100">
                         <i class="bi bi-play-circle"></i> Proses Billing
                     </button>
                 </form>
@@ -59,14 +65,45 @@
                         <label class="form-label">Upload DIL (Nomor Meter)</label>
                         <input type="file" name="file_dil" class="form-control" accept=".xlsx,.xls">
                     </div>
-                    <button type="submit" class="btn btn-info">
+                    <button type="submit" class="btn btn-info w-100">
                         <i class="bi bi-database"></i> Upload DIL
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-pencil-square"></i> Update DPM Koreksi
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">File Update (Excel)</label>
+                        <input type="file" name="file_dpm_update" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">
+                            Kolom: BLTH, IDPEL, LWBPPAKAI, LWBPCABUT, LWBPPASANG, SAHLWBP
+                        </small>
+                    </div>
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Fitur ini untuk update koreksi data DPM yang sudah ada</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>Data akan diupdate berdasarkan BLTH + IDPEL</li>
+                            <li>Kolom yang diupdate: 6 kolom (LWBPPAKAI, LWBPCABUT, LWBPPASANG, SAHLWBP + metadata)</li>
+                        </ul>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-arrow-repeat"></i> Update DPM
                     </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- Summary Statistics -->
 <div class="row">
@@ -76,6 +113,9 @@
             <div class="card">
                 <div class="card-header">
                     <strong>Periode: {{ row.blth }}</strong>
+                    {% if row.unitup %}
+                        <span class="badge bg-secondary">{{ row.unitup }}</span>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
@@ -120,17 +160,26 @@
             <div class="card-header">
                 <strong>Quick Actions</strong>
             </div>
-           <div class="row g-3">
-    <div class="col-md-6">
-        <!-- ✅ PERBAIKAN: Gunakan query string biasa, bukan parameter route -->
-        <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
-           class="btn btn-primary btn-lg w-100">
-            <i class="bi bi-table"></i> Lihat Data Billing
-        </a>
-    </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
+                           class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-table"></i> Lihat Data Billing
+                        </a>
+                    </div>
+                    <!-- <div class="col-md-6">
+                        <button onclick="syncNomet()" class="btn btn-secondary btn-lg w-100">
+                            <i class="bi bi-arrow-repeat"></i> Sync Nomor Meter
+                        </button>
+                    </div> -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+
 {% endblock %}
 
 {% block scripts %}
@@ -138,7 +187,7 @@
 function syncNomet() {
     if (!confirm('Sync nomor meter dari tabel DIL?')) return;
     
-    fetch('/sync_nomet', {
+    fetch('/sync_nomorkwh', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
     })
@@ -150,6 +199,9 @@ function syncNomet() {
         } else {
             alert('Error: ' + data.error);
         }
+    })
+    .catch(err => {
+        alert('Error: ' + err.message);
     });
 }
 </script>
