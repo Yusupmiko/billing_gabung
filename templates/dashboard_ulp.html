@@ -1,4 +1,4 @@
-<!-- templates/dashboard_ulp.html -->
+<!-- templates/dashboard_ulp.html - FIXED VERSION -->
 {% extends "base.html" %}
 
 {% block title %}Dashboard ULP{% endblock %}
@@ -14,14 +14,17 @@
 
 <!-- Upload Forms -->
 <div class="row mb-4">
-    <!-- UPLOAD DPM BARU -->
+    <!-- =================== UPLOAD DPM BARU =================== -->
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header bg-primary text-white">
                 <i class="bi bi-cloud-upload"></i> Upload DPM Baru
             </div>
             <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data" id="form-upload-dpm">
+                    <!-- ✅ HIDDEN INPUT UNTUK IDENTIFIKASI FORM -->
+                    <input type="hidden" name="form_type" value="upload_dpm">
+                    
                     <div class="mb-3">
                         <label class="form-label">Periode (BLTH)</label>
                         <input type="month" name="blth" class="form-control" required>
@@ -39,17 +42,61 @@
         </div>
     </div>
 
-    <!-- UPDATE DPM KOREKSI (FITUR BARU) -->
-  
+    <!-- =================== UPDATE DPM KOREKSI =================== -->
+    <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-pencil-square"></i> <strong>Update DPM BLTH Kini</strong>
+                {% if role == 'UP3' %}
+                    <span class="badge bg-danger">UP3 Mode</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="form-update-koreksi">
+                    <!-- ✅ HIDDEN INPUT UNTUK IDENTIFIKASI FORM -->
+                    <input type="hidden" name="form_type" value="update_koreksi">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">File Update Koreksi (Excel)</label>
+                        <input type="file" name="file_dpm_koreksi" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">
+                            <strong>Kolom wajib:</strong> BLTH, IDPEL, LWBPCABUT, LWBPPASANG, SAHLWBP
+                            {% if role == 'UP3' %}
+                            <br><strong>Wajib tambahkan:</strong> UNITUP (untuk identifikasi ULP mana yang di-update)
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Fitur Update Koreksi:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><strong>LWBPPAKAI dihitung otomatis</strong> dari: <code>LWBPCABUT - SLALWBP + SAHLWBP - LWBPPASANG</code></li>
+                            <li><strong>MARKING_KOREKSI +1</strong> setiap update</li>
+                            <li>Update berdasarkan <strong>BLTH + IDPEL + UNITUP</strong></li>
+                            {% if role == 'UP3' %}
+                            <li><strong>🔓 UP3:</strong> Kolom <strong>UNITUP WAJIB</strong> ada di Excel!</li>
+                            {% else %}
+                            <li><strong>🔒 ULP:</strong> UNITUP otomatis dari session Anda</li>
+                            {% endif %}
+                            <li>Setelah update, <strong>proses ulang billing</strong></li>
+                        </ul>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-arrow-repeat"></i> Update Koreksi DPM
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-    <!-- PROSES BILLING -->
+    <!-- =================== PROSES BILLING =================== -->
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header bg-success text-white">
                 <i class="bi bi-gear"></i> Proses Billing
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="form-process-billing">
                     <input type="hidden" name="action" value="process_billing">
                     <div class="mb-3">
                         <label class="form-label">Periode untuk diproses</label>
@@ -60,7 +107,7 @@
                     </button>
                 </form>
                 <hr>
-                <form method="POST" action="{{ url_for('upload_dil') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('upload_dil') }}" enctype="multipart/form-data" id="form-upload-dil">
                     <div class="mb-3">
                         <label class="form-label">Upload DIL (Nomor Meter)</label>
                         <input type="file" name="file_dil" class="form-control" accept=".xlsx,.xls">
@@ -71,39 +118,32 @@
                 </form>
             </div>
         </div>
-        
     </div>
-      <div class="col-md-4">
-        <div class="card h-100 border-warning">
-            <div class="card-header bg-warning text-dark">
-                <i class="bi bi-pencil-square"></i> Update DPM Koreksi
-            </div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">File Update (Excel)</label>
-                        <input type="file" name="file_dpm_update" class="form-control" accept=".xlsx,.xls" required>
-                        <small class="text-muted">
-                            Kolom: BLTH, IDPEL, LWBPPAKAI, LWBPCABUT, LWBPPASANG, SAHLWBP
-                        </small>
-                    </div>
-                    <div class="alert alert-info py-2 small mb-3">
-                        <i class="bi bi-info-circle"></i> 
-                        <strong>Fitur ini untuk update koreksi data DPM yang sudah ada</strong>
-                        <ul class="mb-0 mt-1">
-                            <li>Data akan diupdate berdasarkan BLTH + IDPEL</li>
-                            <li>Kolom yang diupdate: 6 kolom (LWBPPAKAI, LWBPCABUT, LWBPPASANG, SAHLWBP + metadata)</li>
-                        </ul>
-                    </div>
-                    <button type="submit" class="btn btn-warning w-100">
-                        <i class="bi bi-arrow-repeat"></i> Update DPM
-                    </button>
-                </form>
+</div>
+
+<!-- Info Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5 class="alert-heading"><i class="bi bi-lightbulb"></i> Panduan Penggunaan</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>1. Upload DPM Baru</strong>
+                    <p class="small mb-0">Untuk periode baru yang belum ada di database</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>2. Update Koreksi DPM</strong>
+                    <p class="small mb-0">Untuk koreksi data BLTH kini (MARKING_KOREKSI +1)</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>3. Proses Billing</strong>
+                    <p class="small mb-0">Generate billing setelah DPM ready</p>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
 
 <!-- Summary Statistics -->
 <div class="row">
@@ -111,11 +151,19 @@
         {% for row in summary %}
         <div class="col-12 mb-3">
             <div class="card">
-                <div class="card-header">
-                    <strong>Periode: {{ row.blth }}</strong>
-                    {% if row.unitup %}
-                        <span class="badge bg-secondary">{{ row.unitup }}</span>
-                    {% endif %}
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Periode: {{ row.blth }}</strong>
+                        {% if row.unitup %}
+                            <span class="badge bg-secondary">{{ row.unitup }}</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="/view_billing?blth={{ row.blth }}&unitup_filter={{ unitup }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-table"></i> Lihat Detail
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
@@ -147,7 +195,7 @@
     {% else %}
         <div class="col-12">
             <div class="alert alert-info">
-                Belum ada data billing. Silakan upload DPM terlebih dahulu.
+                <i class="bi bi-info-circle"></i> Belum ada data billing. Silakan upload DPM terlebih dahulu.
             </div>
         </div>
     {% endif %}
@@ -158,51 +206,90 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <strong>Quick Actions</strong>
+                <strong><i class="bi bi-lightning"></i> Quick Actions</strong>
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
                            class="btn btn-primary btn-lg w-100">
                             <i class="bi bi-table"></i> Lihat Data Billing
                         </a>
                     </div>
-                    <!-- <div class="col-md-6">
-                        <button onclick="syncNomet()" class="btn btn-secondary btn-lg w-100">
-                            <i class="bi bi-arrow-repeat"></i> Sync Nomor Meter
-                        </button>
-                    </div> -->
+                    <div class="col-md-4">
+                        <a href="/view_billing?unitup_filter={{ unitup }}&ket_filter=NAIK&auto_filter=1" 
+                           class="btn btn-danger btn-lg w-100">
+                            <i class="bi bi-graph-up-arrow"></i> Data NAIK
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="/view_billing?unitup_filter={{ unitup }}&ket_filter=TURUN&auto_filter=1" 
+                           class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-graph-down-arrow"></i> Data TURUN
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-function syncNomet() {
-    if (!confirm('Sync nomor meter dari tabel DIL?')) return;
-    
-    fetch('/sync_nomorkwh', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(err => {
-        alert('Error: ' + err.message);
+// Auto-focus and validation
+document.addEventListener('DOMContentLoaded', function() {
+    // Validate file extensions
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls'].includes(ext)) {
+                    alert('Hanya file Excel (.xlsx, .xls) yang diperbolehkan!');
+                    e.target.value = '';
+                }
+            }
+        });
     });
-}
+
+    // Auto-set current month for BLTH inputs
+    const monthInputs = document.querySelectorAll('input[type="month"]');
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    monthInputs.forEach(input => {
+        if (!input.value) {
+            input.value = currentMonth;
+        }
+    });
+});
+
+// Loading indicator for form submissions
+const forms = document.querySelectorAll('form');
+forms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+            
+            // Re-enable after 30 seconds as fallback
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }, 30000);
+        }
+    });
+});
+
+// ✅ DEBUG: Log form submission
+document.getElementById('form-update-koreksi').addEventListener('submit', function(e) {
+    console.log('🔄 Form Update Koreksi submitted!');
+    console.log('File input name:', this.querySelector('input[type="file"]').name);
+    console.log('File selected:', this.querySelector('input[type="file"]').files[0]?.name);
+    console.log('Form type:', this.querySelector('input[name="form_type"]').value);
+});
 </script>
 {% endblock %}

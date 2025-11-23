@@ -551,16 +551,28 @@ function renderModalTable(data, type) {
     }
 
     const sortedData = [...originalData].sort((a, b) => {
-      const valA = a[columnName];
-      const valB = b[columnName];
+      let valA = a[columnName];
+      let valB = b[columnName];
+      
       if (valA === valB) return 0;
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
-      if (!isNaN(valA) && !isNaN(valB)) {
+      if (valA === null || valA === undefined || valA === "") return 1;
+      if (valB === null || valB === undefined || valB === "") return -1;
+      
+      // ✅ Bersihkan nilai numerik (hapus %, koma, dan karakter non-numeric)
+      const cleanA = String(valA).replace(/[%,]/g, '').trim();
+      const cleanB = String(valB).replace(/[%,]/g, '').trim();
+      
+      const numA = parseFloat(cleanA);
+      const numB = parseFloat(cleanB);
+      
+      // ✅ Jika keduanya adalah angka valid, sort secara numerik
+      if (!isNaN(numA) && !isNaN(numB)) {
         return currentSort.direction === "asc"
-          ? parseFloat(valA) - parseFloat(valB)
-          : parseFloat(valB) - parseFloat(valA);
+          ? numA - numB
+          : numB - numA;
       }
+      
+      // ✅ Jika bukan angka, sort sebagai string
       return currentSort.direction === "asc"
         ? String(valA).localeCompare(String(valB))
         : String(valB).localeCompare(String(valA));
