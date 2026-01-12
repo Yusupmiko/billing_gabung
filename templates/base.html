@@ -753,59 +753,64 @@
 </head>
 <body>
     <div class="d-flex">
-  <!-- Compact Sidebar -->
-<div class="sidebar text-white">
-    <h4><i class="bi bi-lightning-charge-fill"></i> Billing PLN</h4>
-    <ul class="nav flex-column">
+        <!-- PLN Sidebar -->
+        <div class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <h4>PLN BILLING</h4>
+                    <p>Monitoring System</p>
+                </div>
+            </div>
 
-        {% if session.role == 'UP3' %}
-            <!-- Hanya tampil untuk role UP3 -->
-
-  <li class="nav-item">
-    <a class="nav-link text-white" href="{{ url_for('kelola_user') }}">
-        <i class="bi bi-people"></i> Kelola User
-    </a>
-</li>
-
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('dashboard_up3') }}">
-                    <i class="bi bi-graph-up"></i> Dashboard UP3
-                </a>
-            </li>
-   <!-- 🔍 Tambahan: Dashboard Monitoring -->
-    <li class="nav-item">
-        <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
-
-            <i class="bi bi-bar-chart-line"></i> Dashboard Monitoring
-        </a>
-    </li>
-
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                    <i class="bi bi-clock-history"></i> Audit Log
-                </a>
-            </li>
-        {% else %}
-            <!-- Tampil untuk role selain UP3 -->
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('dashboard_ulp') }}">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
-                    <i class="bi bi-table"></i> Data Billing
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">
-                    <i class="bi bi-clock-history"></i> Audit Log
-                </a>
-            </li>
-
-
-
-        {% endif %}
+            <!-- Navigation -->
+            <div class="sidebar-nav">
+                {% if session.role == 'UP3' %}
+                    <div class="nav-section-title">Management</div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('kelola_user') }}">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Kelola User</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('dashboard_up3') }}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard UP3</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            <span>Dashboard Billing</span>
+                        </a>
+                    </nav>
+                    
+                    <div class="nav-section-title">System</div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('view_audit_log') }}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Audit Log</span>
+                        </a>
+                    </nav>
+                {% else %}
+                    <div class="nav-section-title">Menu Utama</div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('dashboard_ulp') }}">
+                            <i class="bi bi-house-door-fill"></i>
+                            <span>Rekap Data</span>
+                        </a>
+                        <!-- <a class="nav-link" href="{{ url_for('view_billing') }}">
+                            <i class="bi bi-table"></i>
+                            <span>Data Billing</span>
+                        </a> -->
+                        <a class="nav-link" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            <span>Data Billing</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('view_audit_log') }}">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Audit Log</span>
+                        </a>
+                    </nav>
+                {% endif %}
 
                 <div class="nav-section-title" style="margin-top: 20px;">Account</div>
                 <nav class="nav flex-column">

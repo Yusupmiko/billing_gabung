@@ -1,5 +1,5 @@
 {% extends 'base.html'%}
-{% block title %}Dashboard Monitoring Snapbil{% endblock title %}
+{% block title %}Dashboard Monitoring Snapbill{% endblock title %}
 {% block stylesheets %}
 <link
   rel="stylesheet"
@@ -175,10 +175,17 @@
         </div>
         
         <!-- Submit Button -->
-        <div class="col-md-4">
+        
+         <div class="col-md-4">
           <button type="submit" class="btn btn-primary w-100">
             <i class="fas fa-filter"></i> Terapkan Filter
           </button>
+        </div>
+        <div class="col-md-4">
+                <!-- 🔹 Tombol Download Data -->
+            <button id="downloadExcelBtn" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Download Data
+            </button>
         </div>
       </form>
       
