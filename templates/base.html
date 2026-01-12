@@ -165,8 +165,15 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link text-white" href="{{ url_for('view_billing') }}">
-                    <i class="bi bi-table"></i> Data Billing
+                    <i class="bi bi-table"></i> Data Billing Detail
                 </a>
+            </li>
+
+            <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+
+                <i class="bi bi-bar-chart-line"></i> Dashboard Monitoring
+            </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link text-white" href="{{ url_for('view_audit_log') }}">

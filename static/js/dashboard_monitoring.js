@@ -441,21 +441,23 @@ function renderModalTable(data, type) {
 
   const baseColumns = [
     "BLTH",
-    "UNITUP",
+    // "UNITUP",
     "IDPEL",
     "NAMA",
-    "TARIF",
-    "DAYA",
-    "SAHLWBP",
+    // "TARIF",
+    // "DAYA",
     "DELTA_PEMKWH",
     "PERSEN",
-    "JAM_NYALA",
+    // "JAM_NYALA",
     "DLPD_HITUNG",
+    // "GRAFIK KWH",
     "FOTO_3BLN",
+    "NOMORKWH",
+    "SAHLWBP",
     "HASIL_PEMERIKSAAN",
     "STAN_VERIFIKASI",
     "TINDAK_LANJUT",
-    "KET",
+    // "KET",
   ];
 
   const visibleColumns = [];
@@ -464,7 +466,7 @@ function renderModalTable(data, type) {
       if (type === "ganda") {
         visibleColumns.push("VERIFIKASI");
       } else {
-        visibleColumns.push("FOTO_3BLN_AP2T");
+        // visibleColumns.push("FOTO_3BLN_AP2T");
       }
     }
     visibleColumns.push(col);
@@ -516,9 +518,10 @@ function renderModalTable(data, type) {
           }" data-sahlwbp="${
             row["SAHLWBP"] || ""
           }"> <i class="fas fa-check-circle"></i> VERIFIED </button> </td>`;
-        } else if (col === "FOTO_3BLN_AP2T") {
-          tr += `<td> <button type="button" class="btn btn-sm btn-warning foto-3bln-ap2t-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" onclick="open3FotoAP2T('${row["IDPEL"]}', '${row["BLTH"]}')"> <i class="fas fa-image"></i> Link AP2T </button> </td>`;
-        } else if (col === "FOTO_3BLN") {
+        } 
+        
+        
+        else if (col === "FOTO_3BLN") {
           let fotoHtml = row[col] || "";
           fotoHtml = fotoHtml.replace(
             /<a\b([^>]*)>/,
@@ -625,7 +628,7 @@ function renderModalTable(data, type) {
   // ================================================================
   // EVENT: Click pada foto link dan button
   // ================================================================
-  $(document).on("click", ".foto-3bln-link-btn, .foto-3bln-ap2t-btn", function (e) {
+  $(document).on("click", ".foto-3bln-link, .foto-3bln-ap2t-btn", function (e) {
     e.preventDefault();
     const idpel = $(this).data("idpel");
     const sahlwbp = ($(this).data("sahlwbp") || "").toString();
