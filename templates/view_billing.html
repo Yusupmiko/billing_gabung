@@ -4,13 +4,21 @@
 
 {% block extra_css %}
 <style>
-    body { font-size: 11px !important; }
+    /* ⚡⚡⚡ CRITICAL FIX - Z-INDEX HIERARCHY ⚡⚡⚡ */
+    /* Sidebar = 1500 (dari base.html), jadi semua konten harus DI BAWAH itu */
     
+    body { 
+        font-size: 11px !important; 
+    }
+    
+    /* ========================================
+       STICKY HEADER - Z-INDEX FIXED
+    ======================================== */
     .sticky-header {
         position: sticky;
         top: 0;
         background: white;
-        z-index: 100;
+        z-index: 10 !important;  /* ⭐ JAUH DI BAWAH SIDEBAR (1500) */
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         padding: 6px 0 !important;
         margin-bottom: 6px !important;
@@ -27,6 +35,9 @@
         padding: 3px 6px;
     }
     
+    /* ========================================
+       CARD STYLES
+    ======================================== */
     .card {
         margin-bottom: 6px;
         border: 1px solid #dee2e6;
@@ -51,6 +62,9 @@
         row-gap: 6px !important;
     }
     
+    /* ========================================
+       FORM ELEMENTS
+    ======================================== */
     .form-label {
         margin-bottom: 2px;
         font-size: 0.75rem;
@@ -78,6 +92,9 @@
         font-size: 0.75rem;
     }
     
+    /* ========================================
+       TABS
+    ======================================== */
     .nav-tabs {
         margin-bottom: 0;
         border-bottom: 1px solid #dee2e6;
@@ -100,28 +117,30 @@
         background-color: #f1f3f5;
     }
     
- /* ⭐ UPDATE: Table Responsive dengan Sticky Header */
+    /* ========================================
+       TABLE RESPONSIVE - Z-INDEX FIXED
+    ======================================== */
     .table-responsive {
         font-size: 0.7rem;
         max-height: calc(100vh - 320px);
         overflow: auto;
         border: 2px solid #495057;
-        position: relative; /* ⭐ TAMBAH INI */
+        position: relative;
     }
     
     table {
         margin-bottom: 0;
         width: 100%;
-        border-collapse: separate; /* ⭐ UBAH dari collapse ke separate */
-        border-spacing: 0; /* ⭐ TAMBAH INI */
+        border-collapse: separate;
+        border-spacing: 0;
         border: 1px solid #495057;
     }
     
-    /* ⭐ UPDATE: Sticky Header yang Lebih Kuat */
+    /* ⭐ TABLE HEADER - Z-INDEX FIXED */
     table thead th {
-        position: -webkit-sticky; /* ⭐ TAMBAH untuk Safari */
+        position: -webkit-sticky;
         position: sticky;
-        top: 0; /* ⭐ Pastikan ini ada */
+        top: 0;
         background: #0d6efd;
         color: white;
         font-weight: 600;
@@ -131,15 +150,15 @@
         border: 1px solid #fff;
         border-right: 1px solid #0a58ca;
         border-bottom: 2px solid #0a58ca;
-        z-index: 100; /* ⭐ UBAH dari 10 ke 100 */
+        z-index: 5; /* ⭐ DI BAWAH SIDEBAR (1500) */
         line-height: 1.2;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* ⭐ TAMBAH shadow */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
-    /* ⭐ TAMBAH: Pastikan header tetap di atas saat sorting */
+    /* ⭐ SORTED HEADER */
     table thead th.sorted {
         background-color: #0a58ca !important;
-        z-index: 101; /* ⭐ Lebih tinggi dari header lain */
+        z-index: 6; /* ⭐ SEDIKIT LEBIH TINGGI TAPI MASIH DI BAWAH SIDEBAR */
     }
     
     table tbody td {
@@ -150,7 +169,7 @@
         border-bottom: 1px solid #adb5bd;
         white-space: nowrap;
         line-height: 1.2;
-        background-color: white; /* ⭐ TAMBAH explicit background */
+        background-color: white;
     }
     
     table tbody tr:nth-child(even) td {
@@ -161,15 +180,15 @@
         background-color: #e7f1ff !important;
         cursor: pointer;
     }
-
-    /* ... CSS lainnya tetap sama ... */
     
-    /* ⭐ UPDATE: Sorting Icons - pastikan tidak menutupi teks header */
-    table thead th {
+    /* ========================================
+       SORTING ICONS
+    ======================================== */
+    table thead th.sortable {
         cursor: pointer;
         user-select: none;
         position: relative;
-        padding-right: 24px !important; /* ⭐ UBAH dari 20px ke 24px */
+        padding-right: 24px !important;
     }
     
     table thead th.sortable::after {
@@ -177,7 +196,7 @@
         position: absolute;
         right: 6px;
         top: 50%;
-        transform: translateY(-50%); /* ⭐ TAMBAH untuk center vertikal */
+        transform: translateY(-50%);
         opacity: 0.3;
         font-size: 0.8rem;
     }
@@ -197,8 +216,10 @@
         opacity: 1;
         color: #ffd700;
     }
-
-
+    
+    /* ========================================
+       HIGHLIGHT & SPECIAL CELLS
+    ======================================== */
     .highlight {
         background-color: #90EE90 !important;
         font-weight: 600;
@@ -217,6 +238,44 @@
         font-weight: 600;
     }
     
+    table tbody td.sorted-column {
+        background-color: #f0f8ff !important;
+    }
+    
+    table tbody tr:nth-child(even) td.sorted-column {
+        background-color: #e6f2ff !important;
+    }
+    
+    /* ========================================
+       ACTIVE ROW
+    ======================================== */
+    table tbody tr.active-row,
+    table.dataTable tbody tr.active-row {
+        background-color: #d8f3dc !important;
+        color: #1b4332 !important;
+        font-weight: 600 !important;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        border-left: 4px solid #40916c !important;
+    }
+    
+    table tbody tr.active-row:hover,
+    table.dataTable tbody tr.active-row:hover {
+        background-color: #b7e4c7 !important;
+    }
+    
+    table tbody tr.active-row td,
+    table.dataTable tbody tr.active-row td {
+        background-color: inherit !important;
+        color: inherit !important;
+    }
+    
+    table tbody tr.active-row td.sorted-column {
+        background-color: inherit !important;
+    }
+    
+    /* ========================================
+       SCROLLBAR
+    ======================================== */
     .table-responsive::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -231,6 +290,9 @@
         border-radius: 3px;
     }
     
+    /* ========================================
+       PAGINATION
+    ======================================== */
     .bi {
         font-size: 0.8rem;
     }
@@ -251,6 +313,9 @@
         border-color: #0d6efd;
     }
     
+    /* ========================================
+       LOADING OVERLAY - Z-INDEX FIXED
+    ======================================== */
     .loading-overlay {
         display: none;
         position: fixed;
@@ -259,7 +324,7 @@
         width: 100%;
         height: 100%;
         background: rgba(0,0,0,0.5);
-        z-index: 9999;
+        z-index: 2000; /* ⭐ PALING TINGGI - MENUTUPI SIDEBAR */
         justify-content: center;
         align-items: center;
     }
@@ -282,6 +347,9 @@
         100% { transform: rotate(360deg); }
     }
     
+    /* ========================================
+       ROW LIMIT SELECTOR
+    ======================================== */
     .row-limit-selector {
         display: inline-block;
         margin-left: 10px;
@@ -292,12 +360,14 @@
         display: inline-block;
     }
     
-    /* Tombol Simpan Verifikasi Sticky */
+    /* ========================================
+       SAVE BUTTON - Z-INDEX FIXED
+    ======================================== */
     #saveVerifikasiBtn {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        z-index: 1050;
+        z-index: 1000; /* ⭐ DI BAWAH SIDEBAR (1500) TAPI DI ATAS KONTEN */
         padding: 10px 20px;
         font-size: 0.9rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -315,7 +385,9 @@
         100% { transform: scale(1); opacity: 1; }
     }
     
-    /* Input di tabel untuk verifikasi */
+    /* ========================================
+       VERIFIKASI INPUTS
+    ======================================== */
     .verifikasi-input {
         font-size: 0.7rem;
         padding: 2px 4px;
@@ -362,123 +434,24 @@
         outline: none;
     }
     
-    /* Badge untuk menandai ada perubahan */
     .has-changes {
         background-color: #fff3cd !important;
         border-left: 3px solid #ffc107;
     }
-
-
-table tbody tr.active-row,
-table.dataTable tbody tr.active-row {
-    background-color: #d8f3dc !important; /* hijau muda lembut */
-    color: #1b4332 !important;            /* teks hijau tua */
-    font-weight: 600 !important;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    border-left: 4px solid #40916c !important; /* garis kiri lembut */
-}
-
-/* Hover state untuk baris aktif */
-table tbody tr.active-row:hover,
-table.dataTable tbody tr.active-row:hover {
-    background-color: #b7e4c7 !important; /* sedikit lebih gelap saat hover */
-}
-
-/* Pastikan cell di dalam baris aktif ikut berubah */
-table tbody tr.active-row td,
-table.dataTable tbody tr.active-row td {
-    background-color: inherit !important;
-    color: inherit !important;
-}
-
- /* Sorting Icons */
-    table thead th {
-        cursor: pointer;
-        user-select: none;
+    
+    /* ========================================
+       GRAFIK CANVAS
+    ======================================== */
+    #grafikContent {
+        min-height: 400px;
+        height: 400px;
         position: relative;
-        padding-right: 20px !important;
+        padding: 10px;
     }
     
-    table thead th.sortable::after {
-        content: "⇅";
-        position: absolute;
-        right: 6px;
-        opacity: 0.3;
-        font-size: 0.8rem;
+    #grafikChart {
+        max-height: 400px !important;
     }
-    
-    table thead th.sortable:hover::after {
-        opacity: 0.6;
-    }
-    
-    table thead th.sort-asc::after {
-        content: "▲";
-        opacity: 1;
-        color: #ffd700;
-    }
-    
-    table thead th.sort-desc::after {
-        content: "▼";
-        opacity: 1;
-        color: #ffd700;
-    }
-    
-    /* Highlight sorted column */
-    table thead th.sorted {
-        background-color: #0a58ca !important;
-    }
-    
-    table tbody td.sorted-column {
-        background-color: #f0f8ff !important;
-    }
-    
-    table tbody tr:nth-child(even) td.sorted-column {
-        background-color: #e6f2ff !important;
-    }
-    
-    table tbody tr.active-row td.sorted-column {
-        background-color: inherit !important;
-    }
-
-
-/* === PERBAIKAN HEADER STICKY TABEL === */
-.table-responsive {
-    position: relative;
-    overflow: auto;
-    max-height: calc(100vh - 220px); /* bisa sesuaikan tinggi area tampil */
-    border: 2px solid #495057;
-}
-
-/* Pastikan header benar-benar sticky dan selalu di atas */
-.table thead {
-    position: sticky;
-    top: 0;
-    z-index: 1050; /* lebih tinggi dari elemen lain */
-}
-
-/* Header kolom */
-.table thead th {
-    position: sticky;
-    top: 0;
-    background-color: #0d6efd !important;
-    color: white !important;
-    font-weight: 600;
-    text-align: center;
-    z-index: 1060; /* pastikan paling atas */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* biar terlihat terpisah */
-}
-
-/* Grafik Canvas Container */
-#grafikContent {
-    min-height: 400px;
-    height: 400px;
-    position: relative;
-    padding: 10px;
-}
-
-#grafikChart {
-    max-height: 400px !important;
-}
 </style>
 {% endblock %}
 
@@ -507,6 +480,10 @@ table.dataTable tbody tr.active-row td {
 
     <div class="col-4 text-end">
         <div class="d-flex justify-content-end align-items-center gap-2">
+                    <!-- 🔹 Tombol Kembali ke Dashboard -->
+            <a href="/dashboard_up3" class="btn btn-outline-primary" title="Kembali ke Dashboard">
+                <i class="bi bi-house-door"></i> Kembali
+            </a>
             <!-- 🔹 Tombol Download Data -->
             <button id="downloadExcelBtn" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel"></i> Download Data
