@@ -885,10 +885,10 @@ def process_billing_advanced(blth_kini, unitup, engine):
             'DLPD_HITUNG': df_merged['DLPD_HITUNG'],
             'DLPD_3BLN': df_merged['DLPD_3BLN'],
             'MARKING_KOREKSI': df_merged['MARKING_KOREKSI'].fillna(0).astype(int),  # ✅ TAMBAHAN
-            'NOMORKWH': '',
-            'HASIL_PEMERIKSAAN': '',
-            'TINDAK_LANJUT': '',
-            'STAN_VERIFIKASI': ''
+            'NOMORKWH': ''
+            # 'HASIL_PEMERIKSAAN': '',
+            # 'TINDAK_LANJUT': '',
+            # 'STAN_VERIFIKASI': ''
         })
 
         # --- Hapus duplikasi ---
