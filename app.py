@@ -3087,8 +3087,8 @@ def view_grafik(idpel):
     try:
         blth = normalize_blth(blth)
         
-        # Generate 6 bulan terakhir
-        months = [get_previous_blth(blth, i) for i in range(6)]
+        # Generate 12 bulan terakhir
+        months = [get_previous_blth(blth, i) for i in range(12)]
         months.reverse()
         
         # Query dengan filter UNITUP
@@ -3756,7 +3756,125 @@ def download_excel():
         traceback.print_exc()
         return jsonify({"error": f"Gagal membuat file Excel: {str(e)}"}), 500
     
-    
+
+
+@app.route("/download_billing")
+def download_billing():
+    try:
+        # ===================== 🔹 Ambil Parameter =====================
+        blth = request.args.get("blth")
+        if not blth:
+            return "Parameter blth wajib", 400
+
+        # ===================== 🔹 Query Database =====================
+        query = text("""
+            SELECT *
+            FROM billing
+            WHERE blth = :blth
+            AND DLPD_HITUNG IS NOT NULL
+            AND TRIM(DLPD_HITUNG) <> ''
+            ORDER BY UNITUP, IDPEL
+        """)
+
+
+
+        df = pd.read_sql(query, engine, params={"blth": blth})
+
+        if df.empty:
+            return "Data tidak ditemukan", 404
+
+        # ===================== 🔹 Hapus Kolom Tidak Perlu =====================
+        columns_to_exclude = ['updated_by', 'created_at', 'id']
+        df = df.drop(columns=[c for c in columns_to_exclude if c in df.columns], errors="ignore")
+
+        # ===================== 🔹 Buat Workbook Excel =====================
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Data"
+
+        # Header Style
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+
+        ws.append(df.columns.tolist())
+        for col_idx in range(1, len(df.columns) + 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+
+        # ===================== 🔹 Identifikasi Kolom Foto =====================
+        foto_columns = ["GRAFIK", "FOTO_AKHIR", "FOTO_LALU", "FOTO_LALU2", "FOTO_3BLN"]
+        foto_indexes = [i for i, col in enumerate(df.columns) if col.upper() in foto_columns]
+
+        # ===================== 🔹 Isi Data ke Excel =====================
+        for i, row in df.iterrows():
+            for j, value in enumerate(row):
+                cell = ws.cell(row=i + 2, column=j + 1)
+
+                if j in foto_indexes:
+                    value_str = str(value).strip() if value else ""
+
+                    if not value_str:
+                        cell.value = "TIDAK ADA FOTO"
+                        cell.font = Font(color="FF0000", italic=True)
+                        continue
+
+                    # 🔍 Ekstraksi URL
+                    url = None
+
+                    # window.open('url')
+                    if "window.open" in value_str:
+                        match = re.search(r"window\.open\('([^']+)'", value_str)
+                        if match:
+                            url = match.group(1)
+
+                    # <a href="...">
+                    if not url and "<a" in value_str:
+                        soup = BeautifulSoup(value_str, "html.parser")
+                        a_tag = soup.find("a")
+                        if a_tag and a_tag.has_attr("href"):
+                            url = a_tag["href"]
+
+                    # URL langsung
+                    if not url and value_str.startswith("http"):
+                        url = value_str
+
+                    # --- 📎 Isi ke Excel ---
+                    if url:
+                        cell.value = "LINK FOTO"
+                        cell.hyperlink = url
+                        cell.font = Font(color="0000EE", underline="single")
+                    else:
+                        cell.value = "TIDAK ADA FOTO"
+                        cell.font = Font(color="FF0000", italic=True)
+
+                else:
+                    cell.value = value if value is not None else ""
+
+        # ===================== 🔹 Auto Width Kolom =====================
+        for col_cells in ws.columns:
+            ws.column_dimensions[col_cells[0].column_letter].width = (
+                max(len(str(cell.value)) if cell.value else 0 for cell in col_cells) + 2
+            )
+
+        # ===================== 🔹 Simpan ke Memory =====================
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # ===================== 🔹 Kirim File =====================
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f"billing_gabung_{blth}.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Gagal export Excel: {str(e)}"}), 500
+
     
 # 📥 DOWNLOAD EXCEL PER HARI BACA - FIXED VERSION WITH MULTIPLE UNITUP FILTER
 # ==========================

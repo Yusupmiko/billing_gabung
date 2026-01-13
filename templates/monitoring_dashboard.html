@@ -181,13 +181,16 @@
             <i class="fas fa-filter"></i> Terapkan Filter
           </button>
         </div>
-        <div class="col-md-4">
-                <!-- 🔹 Tombol Download Data -->
-            <button id="downloadExcelBtn" class="btn btn-success">
-                <i class="bi bi-file-earmark-excel"></i> Download Data
-            </button>
-        </div>
+       
       </form>
+
+       <div class="col-md-4">
+        <!-- 🔹 Tombol Download Data -->
+        <button id="downloadExcelBtn" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Download Data
+        </button>
+
+        </div>
       
       <!-- Active Filter Info -->
       {% if selected_unitup or selected_blth %}
@@ -746,6 +749,7 @@
       }
     }, 100);
   }
+
 </script>
 
 <!-- Script utama untuk handle semua modal dan AJAX -->

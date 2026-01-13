@@ -462,13 +462,13 @@ function renderModalTable(data, type) {
 
   const visibleColumns = [];
   baseColumns.forEach((col) => {
-    if (col === "HASIL_PEMERIKSAAN") {
-      if (type === "ganda") {
-        visibleColumns.push("VERIFIKASI");
-      } else {
-        // visibleColumns.push("FOTO_3BLN_AP2T");
-      }
-    }
+    // if (col === "HASIL_PEMERIKSAAN") {
+    //   if (type === "ganda") {
+    //     visibleColumns.push("VERIFIKASI");
+    //   } else {
+    //     visibleColumns.push("FOTO_3BLN_AP2T");
+    //   }
+    // }
     visibleColumns.push(col);
   });
 
@@ -518,16 +518,15 @@ function renderModalTable(data, type) {
           }" data-sahlwbp="${
             row["SAHLWBP"] || ""
           }"> <i class="fas fa-check-circle"></i> VERIFIED </button> </td>`;
-        } 
-        
-        
-        else if (col === "FOTO_3BLN") {
+        }     
+          else if (col === "FOTO_3BLN") {
           let fotoHtml = row[col] || "";
           fotoHtml = fotoHtml.replace(
             /<a\b([^>]*)>/,
-            `<a class="foto-3bln-link" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" $1>`
+            `<a class="foto-3bln-link-btn" data-idpel="${row["IDPEL"]}" data-sahlwbp="${row["SAHLWBP"]}" $1>`
           );
           tr += `<td>${fotoHtml}</td>`;
+
         } else {
           tr += `<td>${
             row[col] !== null && row[col] !== undefined ? row[col] : ""
@@ -628,7 +627,7 @@ function renderModalTable(data, type) {
   // ================================================================
   // EVENT: Click pada foto link dan button
   // ================================================================
-  $(document).on("click", ".foto-3bln-link, .foto-3bln-ap2t-btn", function (e) {
+  $(document).on("click", ".foto-3bln-link-btn, .foto-3bln-ap2t-btn", function (e) {
     e.preventDefault();
     const idpel = $(this).data("idpel");
     const sahlwbp = ($(this).data("sahlwbp") || "").toString();
