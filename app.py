@@ -939,12 +939,22 @@ def process_billing_advanced(blth_kini, unitup, engine):
             </button>"""
         )
 
+        # kroscek['FOTO_3BLN'] = kroscek.apply(
+        #     lambda row: f"""<button class='btn btn-sm btn-primary foto-3bln-link-btn' 
+        #         data-idpel="{row['IDPEL']}"
+        #         data-sahlwbp="{row['SAHLWBP']}"
+        #         onclick="open3Foto('{row['IDPEL']}', '{blth_kini}'); return false;">
+        #         <i class='bi bi-images'></i> 3 Foto
+        #     </button>""",
+        #     axis=1
+        # )
+        
         kroscek['FOTO_3BLN'] = kroscek.apply(
             lambda row: f"""<button class='btn btn-sm btn-primary foto-3bln-link-btn' 
                 data-idpel="{row['IDPEL']}"
                 data-sahlwbp="{row['SAHLWBP']}"
                 onclick="open3Foto('{row['IDPEL']}', '{blth_kini}'); return false;">
-                <i class='bi bi-images'></i> 3 Foto
+                {str(row['IDPEL'])[-5:] if len(str(row['IDPEL'])) >= 5 else str(row['IDPEL'])}
             </button>""",
             axis=1
         )
