@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block title %}Cek Foto Pelanggan - PLN Billing{% endblock %}
+
+{% block page_title %}
+    <i class="bi bi-camera-fill"></i> Cek Foto Pelanggan
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Card Input -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-pln-gradient text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-search"></i> Input Data Pelanggan
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="fotoForm">
+                    <!-- IDPEL -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-person-badge text-pln-blue"></i> ID Pelanggan (IDPEL)
+                        </label>
+                        <input type="text" 
+                               name="idpel" 
+                               id="idpel" 
+                               class="form-control" 
+                               placeholder="Masukkan 12 digit IDPEL"
+                               value="{{ idpel }}"
+                               maxlength="12"
+                               required>
+                        <small class="text-muted">Contoh: 541501234567</small>
+                    </div>
+
+                    <!-- BLTH -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-calendar3 text-pln-blue"></i> Periode Tagihan (BLTH)
+                        </label>
+                        <input type="month" 
+                               name="blth" 
+                               id="blth" 
+                               class="form-control" 
+                               value="{{ blth_kini[:4] }}-{{ blth_kini[4:6] if blth_kini else '' }}"
+                               required>
+                        <small class="text-muted">Pilih bulan dan tahun periode</small>
+                    </div>
+
+                    <!-- Button Submit -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-search"></i> Cari Foto Pelanggan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if links %}
+        <!-- Card Hasil Foto -->
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-images"></i> Foto Pelanggan
+                </h5>
+                <small>IDPEL: {{ idpel }} | BLTH: {{ blth_kini }}</small>
+            </div>
+            <div class="card-body">
+                <!-- Info Periode -->
+                <div class="alert alert-info">
+                    <strong><i class="bi bi-info-circle"></i> Periode:</strong><br>
+                    🔵 Bulan Kini: {{ blth_kini[:4] }}-{{ blth_kini[4:6] }}<br>
+                    🟡 Bulan Lalu: {{ blth_lalu[:4] }}-{{ blth_lalu[4:6] }}<br>
+                    🟢 2 Bulan Lalu: {{ blth_lalu2[:4] }}-{{ blth_lalu2[4:6] }}
+                </div>
+
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#kini">
+                            🔵 Bulan Kini
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#lalu">
+                            🟡 Bulan Lalu
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#lalu2">
+                            🟢 2 Bulan Lalu
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- BULAN KINI -->
+                    <div class="tab-pane fade show active" id="kini">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <button class="btn btn-success w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_KINI_1 }}', 'Foto Meteran - Bulan Kini')">
+                                    <i class="bi bi-speedometer2"></i> Foto Meteran 
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-success w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_KINI_7 }}', 'Foto Rumah - Bulan Kini')">
+                                    <i class="bi bi-house-door"></i> Foto Rumah
+                                </button>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button class="btn btn-primary w-100 fw-bold" 
+                                        onclick="open3Foto('kini', '{{ idpel }}', '{{ blth_kini }}')">
+                                    <i class="bi bi-grid-3x3"></i> Tampilkan 3 Foto Sekaligus
+                                </button>
+                            </div>
+                            
+                            <!-- Tombol Foto 3 Bulan (Historis) -->
+                            <div class="col-12">
+                                <button class="btn btn-warning w-100 fw-bold" onclick="openServlet1MultiPeriod()">
+                                    <i class="bi bi-collection"></i> Foto 3 Bulan (historis foto stan)
+                                </button>
+                            </div>
+                            
+                            <!-- Tombol Grafik Pemakaian -->
+                            <div class="col-12">
+                                <button class="btn btn-info w-100 fw-bold" onclick="openGrafikPemakaian()">
+                                    <i class="bi bi-graph-up"></i> Grafik Pemakaian 12 Bulan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BULAN LALU -->
+                    <div class="tab-pane fade" id="lalu">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <button class="btn btn-warning w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_LALU_1 }}', 'Foto Meteran - Bulan Lalu')">
+                                    <i class="bi bi-speedometer2"></i> Foto Meteran 
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-warning w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_LALU_7 }}', 'Foto Rumah - Bulan Lalu')">
+                                    <i class="bi bi-house-door"></i> Foto Rumah 
+                                </button>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button class="btn btn-primary w-100 fw-bold" 
+                                        onclick="open3Foto('lalu', '{{ idpel }}', '{{ blth_lalu }}')">
+                                    <i class="bi bi-grid-3x3"></i> Tampilkan 3 Foto Sekaligus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2 BULAN LALU -->
+                    <div class="tab-pane fade" id="lalu2">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <button class="btn btn-secondary w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_LALU2_1 }}', 'Foto Meteran - 2 Bulan Lalu')">
+                                    <i class="bi bi-speedometer2"></i> Foto Meteran 
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-secondary w-100 fw-bold" 
+                                        onclick="openFoto('{{ links.FOTO_LALU2_7 }}', 'Foto Rumah - 2 Bulan Lalu')">
+                                    <i class="bi bi-house-door"></i> Foto Rumah 
+                                </button>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button class="btn btn-primary w-100 fw-bold" 
+                                        onclick="open3Foto('lalu2', '{{ idpel }}', '{{ blth_lalu2 }}')">
+                                    <i class="bi bi-grid-3x3"></i> Tampilkan 3 Foto Sekaligus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Note -->
+                <div class="alert alert-warning mt-4">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Catatan:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Foto akan terbuka di jendela popup baru</li>
+                        <li>Pastikan popup browser tidak diblokir</li>
+                        <li>Jika foto tidak muncul, kemungkinan belum tersedia di server</li>
+                        <li><strong>S1</strong> = Servlet1 (Meteran), <strong>S7</strong> = Servlet7 (Rumah)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal untuk Grafik Pemakaian -->
+<div class="modal fade" id="grafikModal" tabindex="-1" aria-labelledby="grafikModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="grafikModalLabel">
+                    <i class="bi bi-graph-up"></i> Grafik Pemakaian 12 Bulan Terakhir
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="grafikLoadingContainer" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Memuat grafik pemakaian...</p>
+                </div>
+                <iframe 
+                    id="grafikIframe" 
+                    width="100%" 
+                    height="600" 
+                    style="border:none; display:none;"
+                    onload="onGrafikLoad()"
+                    onerror="onGrafikError()">
+                </iframe>
+                <div id="grafikErrorContainer" class="alert alert-danger m-3" style="display:none;">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Gagal memuat grafik. Silakan coba lagi.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fungsi buka foto single
+function openFoto(url, title) {
+    if (!url) {
+        alert('URL foto tidak tersedia');
+        return;
+    }
+    window.open(url, title, 'width=700,height=900,scrollbars=yes,resizable=yes');
+}
+
+// Fungsi buka 3 foto sekaligus - REUSE 3 windows yang sama
+function open3Foto(period, idpel, blth) {
+    const base = 'https://portalapp.iconpln.co.id/acmt';
+    const width = 400, height = 900, spacing = 25, top = 50;
+    const left1 = 50, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    
+    // ✅ Gunakan nama window TETAP untuk 3 window
+    window.open(
+        `${base}/DisplayBlobServlet1?idpel=${idpel}&blth=${blth}`,
+        'pln_window_1',
+        `width=${width},height=${height},top=${top},left=${left1},scrollbars=yes,resizable=yes`
+    );
+    
+    window.open(
+        `${base}/DisplayBlobServlet2?idpel=${idpel}&blth=${blth}`,
+        'pln_window_2',
+        `width=${width},height=${height},top=${top},left=${left2},scrollbars=yes,resizable=yes`
+    );
+    
+    window.open(
+        `${base}/DisplayBlobServlet3?idpel=${idpel}&blth=${blth}`,
+        'pln_window_3',
+        `width=${width},height=${height},top=${top},left=${left3},scrollbars=yes,resizable=yes`
+    );
+}
+
+// Fungsi buka Servlet1 untuk 3 periode - REUSE 3 windows yang sama
+function openServlet1MultiPeriod() {
+    const idpel = '{{ idpel }}';
+    const blth_kini = '{{ blth_kini }}';
+    const blth_lalu = '{{ blth_lalu }}';
+    const blth_lalu2 = '{{ blth_lalu2 }}';
+    
+    if (!idpel || !blth_kini) {
+        alert('Data IDPEL atau BLTH tidak tersedia');
+        return;
+    }
+    
+    const base = 'https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1';
+    const width = 400, height = 900, spacing = 25, top = 50;
+    const left1 = 50, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    
+    window.open(
+        `${base}?idpel=${idpel}&blth=${blth_kini}`,
+        'pln_window_1',
+        `width=${width},height=${height},top=${top},left=${left1},scrollbars=yes,resizable=yes`
+    );
+    
+    window.open(
+        `${base}?idpel=${idpel}&blth=${blth_lalu}`,
+        'pln_window_2',
+        `width=${width},height=${height},top=${top},left=${left2},scrollbars=yes,resizable=yes`
+    );
+    
+    window.open(
+        `${base}?idpel=${idpel}&blth=${blth_lalu2}`,
+        'pln_window_3',
+        `width=${width},height=${height},top=${top},left=${left3},scrollbars=yes,resizable=yes`
+    );
+}
+
+// ================================================================
+// 📊 FUNGSI GRAFIK PEMAKAIAN - NEW!
+// ================================================================
+function openGrafikPemakaian() {
+    const idpel = '{{ idpel }}';
+    const blth = '{{ blth_kini }}';
+    const unitup = '{{ unitup }}';
+    
+    console.log('📊 Opening grafik:', {
+        idpel: idpel,
+        blth: blth,
+        unitup: unitup
+    });
+    
+    // Validasi
+    if (!idpel || !blth) {
+        alert('⚠️ Data IDPEL atau BLTH tidak tersedia. Silakan lakukan pencarian terlebih dahulu.');
+        return;
+    }
+    
+    // Build URL grafik - sesuai dengan endpoint di Python
+    const grafikUrl = `/grafik/${idpel}?blth=${blth}&ulp=${unitup}`;
+    
+    console.log('🔗 Grafik URL:', grafikUrl);
+    
+    // Reset modal state
+    document.getElementById('grafikLoadingContainer').style.display = 'block';
+    document.getElementById('grafikIframe').style.display = 'none';
+    document.getElementById('grafikErrorContainer').style.display = 'none';
+    
+    // Set iframe source
+    document.getElementById('grafikIframe').src = grafikUrl;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('grafikModal'));
+    modal.show();
+}
+
+// Callback ketika grafik berhasil dimuat
+function onGrafikLoad() {
+    console.log('✅ Grafik loaded successfully');
+    document.getElementById('grafikLoadingContainer').style.display = 'none';
+    document.getElementById('grafikIframe').style.display = 'block';
+}
+
+// Callback ketika grafik gagal dimuat
+function onGrafikError() {
+    console.error('❌ Grafik failed to load');
+    document.getElementById('grafikLoadingContainer').style.display = 'none';
+    document.getElementById('grafikErrorContainer').style.display = 'block';
+}
+
+// Auto-format BLTH input
+document.getElementById('blth').addEventListener('change', function() {
+    const val = this.value; // Format: YYYY-MM
+    console.log('BLTH selected:', val);
+});
+
+// Auto-format IDPEL (12 digit)
+document.getElementById('idpel').addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').substring(0, 12);
+});
+</script>
+
+<!-- Custom CSS untuk Tab Pills yang lebih menarik -->
+<style>
+.nav-tabs {
+    border: none;
+    gap: 8px;
+}
+
+.nav-tabs .nav-item {
+    margin-bottom: 0;
+}
+
+.nav-tabs .nav-link {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.nav-tabs .nav-link:active {
+    transform: scale(0.95);
+}
+
+.nav-tabs .nav-link:nth-child(1).active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+}
+
+.nav-tabs .nav-link:nth-child(2).active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-color: #f59e0b;
+}
+
+.nav-tabs .nav-link:nth-child(3).active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+}
+
+/* Styling untuk iframe grafik */
+#grafikIframe {
+    transition: opacity 0.3s;
+}
+
+/* Styling untuk modal grafik */
+#grafikModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#grafikModal .modal-header {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+/* Tombol Professional Style */
+.btn-professional {
+    font-weight: 600;
+    padding: 12px 20px;
+    border-width: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-professional:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-professional:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Outline Primary Professional */
+.btn-outline-primary.btn-professional {
+    color: #0d6efd;
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.btn-outline-primary.btn-professional:hover {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Outline Success Professional */
+.btn-outline-success.btn-professional {
+    color: #198754;
+    border-color: #198754;
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+.btn-outline-success.btn-professional:hover {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
+}
+</style>
+
+{% endblock %}

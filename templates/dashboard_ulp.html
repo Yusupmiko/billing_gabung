@@ -1,0 +1,523 @@
+<!-- templates/dashboard_ulp.html - AUTO-BILLING VERSION -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard ULP{% endblock %}
+{% block page_title %}Dashboard {{ unitup }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3>Selamat Datang, {{ nama }}</h3>
+        <p class="text-muted">Unit: {{ unitup }} | Periode: {{ blth_terakhir }}</p>
+    </div>
+</div>
+
+<!-- ✨ INFO AUTO-BILLING -->
+<!-- <div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success">
+            <h5 class="alert-heading">
+                <i class="bi bi-robot"></i> ✨ Auto-Process Billing Aktif!
+            </h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong><i class="bi bi-upload"></i> Upload DPM Baru:</strong>
+                    <ul class="small mb-0 mt-2">
+                        <li>Upload file Excel → <strong>Billing otomatis diproses</strong></li>
+                        <li>Tidak perlu klik tombol tambahan</li>
+                        <li>Langsung lihat hasil di tabel summary</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong><i class="bi bi-pencil-square"></i> Update Koreksi DPM:</strong>
+                    <ul class="small mb-0 mt-2">
+                        <li>Update data → <strong>Billing otomatis di-refresh</strong></li>
+                        <li>MARKING_KOREKSI otomatis +1</li>
+                        <li>Data billing langsung ter-update</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+<!-- ✨ INFO AUTO-BILLING dengan Riwayat Upload -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="alert-heading mb-0">
+                    <i class=></i> ⚡️ History Upload DPM
+                </h5>
+                <!-- Badge untuk periode yang sudah diupload -->
+                <div>
+                    <span class="badge bg-white text-success">
+                        <i class="bi bi-database-check"></i> Data Tersedia: 
+                        <strong>{{ uploaded_months|length if uploaded_months else 0 }}</strong> Periode
+                    </span>
+                </div>
+            </div>
+            <hr>
+            
+            <!-- Daftar Periode yang sudah diupload (12 bulan terakhir) -->
+            {% if uploaded_months %}
+            <div class="mb-3">
+                <div class="d-flex align-items-center mb-2">
+                    <strong><i class="bi bi-calendar-check"></i> Periode Terakhir (12 Bulan):</strong>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for month in uploaded_months %}
+                    <span class="badge bg-white text-success border border-success px-3 py-2" 
+                          style="font-size: 0.9rem;">
+                        <i class="bi bi-check-circle-fill"></i> {{ month }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            <hr>
+            {% endif %}
+            
+            <!-- <div class="row">
+                <div class="col-md-6">
+                    <strong><i class="bi bi-upload"></i> Upload DPM Baru:</strong>
+                    <ul class="small mb-0 mt-2">
+                        <li>Upload file Excel → <strong>Billing otomatis diproses</strong></li>
+                        <li>Tidak perlu klik tombol tambahan</li>
+                        <li>Langsung lihat hasil di tabel summary</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong><i class="bi bi-pencil-square"></i> Update Koreksi DPM:</strong>
+                    <ul class="small mb-0 mt-2">
+                        <li>Update data → <strong>Billing otomatis di-refresh</strong></li>
+                        <li>MARKING_KOREKSI otomatis +1</li>
+                        <li>Data billing langsung ter-update</li>
+                    </ul>
+                </div>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+
+<!-- Upload Forms -->
+<div class="row mb-4">
+    <!-- =================== UPLOAD DPM BARU =================== -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-cloud-upload"></i> Upload DPM Baru
+                <!-- <span class="badge bg-light text-primary float-end">Auto-Billing</span> -->
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="form-upload-dpm">
+                    <input type="hidden" name="form_type" value="upload_dpm">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Periode (BLTH)</label>
+                        <input type="month" name="blth" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">File DPM (Excel)</label>
+                        <input type="file" name="file_dpm" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Upload data DPM baru, billing akan otomatis diproses
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        <i class="bi bi-upload"></i> Upload DPM & Auto-Process
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== UPDATE DPM KOREKSI =================== -->
+    <div class="col-md-6">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-pencil-square"></i> <strong>Update DPM BLTH Kini</strong>
+                <!-- <span class="badge bg-dark float-end">Auto-Refresh</span> -->
+                {% if role == 'UP3' %}
+                    <span class="badge bg-danger">UP3 Mode</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="form-update-koreksi">
+                    <input type="hidden" name="form_type" value="update_koreksi">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">File Update Koreksi (Excel)</label>
+                        <input type="file" name="file_dpm_koreksi" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">
+                            <strong>Kolom wajib:</strong> BLTH, IDPEL, LWBPCABUT, LWBPPASANG, SAHLWBP
+                            {% if role == 'UP3' %}
+                            <br><strong>Wajib tambahkan:</strong> UNITUP
+                            {% endif %}
+                        </small>
+                    </div>
+                    <!-- <div class="alert alert-warning py-2 small mb-3">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Fitur Update Koreksi:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><strong>LWBPPAKAI dihitung otomatis</strong> dari: <code>LWBPCABUT - SLALWBP + SAHLWBP - LWBPPASANG</code></li>
+                            <li><strong>MARKING_KOREKSI +1</strong> setiap update</li>
+                            <li>Update berdasarkan <strong>BLTH + IDPEL + UNITUP</strong></li>
+                            {% if role == 'UP3' %}
+                            <li><strong>🔓 UP3:</strong> Kolom <strong>UNITUP WAJIB</strong> ada di Excel!</li>
+                            {% else %}
+                            <li><strong>🔒 ULP:</strong> UNITUP otomatis dari session Anda</li>
+                            {% endif %}
+                            <li><strong>🤖 Billing otomatis di-refresh</strong></li>
+                        </ul>
+                    </div> -->
+                    <button type="submit" class="btn btn-warning w-100 btn-lg">
+                        <i class="bi bi-arrow-repeat"></i> Update & Auto-Refresh
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload DIL (Nomor Meter) - Pindah ke card terpisah -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-database"></i> Upload DIL (Data Induk Langganan)
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('upload_dil') }}" enctype="multipart/form-data" id="form-upload-dil">
+                    <div class="mb-3">
+                        <label class="form-label">File DIL (Excel)</label>
+                        <input type="file" name="file_dil" class="form-control" accept=".xlsx,.xls" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Upload DIL (Cukup Kolom IDPEL & NOMORKWH )
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="bi bi-database"></i> Upload DIL
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <!-- <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-lightning"></i> Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
+                       class="btn btn-primary btn-lg">
+                        <i class="bi bi-table"></i> Lihat Data Billing
+                    </a>
+                    {% if role == 'UP3' %}
+                    <a href="{{ url_for('dashboard_up3') }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard UP3
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+<!-- Info Section -->
+<!-- <div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-light border">
+            <h6 class="alert-heading"><i class="bi bi-lightbulb"></i> Workflow Penggunaan</h6>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <div class="badge bg-primary rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">1</div>
+                        <div>
+                            <strong>Upload DPM Baru</strong>
+                            <p class="small mb-0 text-muted">Untuk periode baru → Billing otomatis ter-generate</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <div class="badge bg-warning rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">2</div>
+                        <div>
+                            <strong>Update Koreksi (Opsional)</strong>
+                            <p class="small mb-0 text-muted">Jika ada koreksi → Billing otomatis di-refresh</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <div class="badge bg-success rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">3</div>
+                        <div>
+                            <strong>Lihat Hasil Billing</strong>
+                            <p class="small mb-0 text-muted">Cek data billing yang sudah otomatis diproses</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<!-- Summary Statistics -->
+<div class="row">
+    <div class="col-12">
+        <h5 class="mb-3">
+            <i class="bi bi-bar-chart"></i> Ringkasan Data Billing
+        </h5>
+    </div>
+    
+    {% if summary %}
+        {% for row in summary %}
+        <div class="col-12 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong><i class="bi bi-calendar3"></i> Periode: {{ row.blth }}</strong>
+                        {% if row.unitup %}
+                            <span class="badge bg-secondary ms-2">{{ row.unitup }}</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="/view_billing?blth={{ row.blth }}&unitup_filter={{ unitup }}&auto_filter=1" 
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> Lihat Detail
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h4 class="text-primary mb-1">{{ row.total }}</h4>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-danger mb-1">{{ row.naik }}</h4>
+                            <small class="text-muted">Naik</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-warning mb-1">{{ row.turun }}</h4>
+                            <small class="text-muted">Turun</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-info mb-1">{{ row.div_na }}</h4>
+                            <small class="text-muted">DIV/NA</small>
+                        </div>
+                        <div class="col">
+                            <h4 class="text-success mb-1">{{ row.aman }}</h4>
+                            <small class="text-muted">Aman</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress bar visualization -->
+                    <div class="mt-3">
+                        <div class="progress" style="height: 25px;">
+                            {% set total = row.total if row.total > 0 else 1 %}
+                            <div class="progress-bar bg-danger" style="width: {{ (row.naik / total * 100)|round(1) }}%">
+                                {{ (row.naik / total * 100)|round(1) }}%
+                            </div>
+                            <div class="progress-bar bg-warning" style="width: {{ (row.turun / total * 100)|round(1) }}%">
+                                {{ (row.turun / total * 100)|round(1) }}%
+                            </div>
+                            <div class="progress-bar bg-info" style="width: {{ (row.div_na / total * 100)|round(1) }}%">
+                                {{ (row.div_na / total * 100)|round(1) }}%
+                            </div>
+                            <div class="progress-bar bg-success" style="width: {{ (row.aman / total * 100)|round(1) }}%">
+                                {{ (row.aman / total * 100)|round(1) }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                <strong>Belum ada data billing.</strong> 
+                Silakan upload DPM untuk memulai, billing akan otomatis diproses.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log('🔍 DEBUG uploaded_months:', {{ uploaded_months|tojson }});
+console.log('📊 Length:', {{ uploaded_months|length }});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // =================== FILE VALIDATION ===================
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls'].includes(ext)) {
+                    alert('❌ Hanya file Excel (.xlsx, .xls) yang diperbolehkan!');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Show file name preview
+                const formGroup = e.target.closest('.mb-3');
+                let preview = formGroup.querySelector('.file-preview');
+                if (!preview) {
+                    preview = document.createElement('div');
+                    preview.className = 'file-preview alert alert-success py-1 px-2 mt-2 small';
+                    formGroup.appendChild(preview);
+                }
+                preview.innerHTML = `<i class="bi bi-file-earmark-excel"></i> File: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+            }
+        });
+    });
+
+    // =================== AUTO-SET CURRENT MONTH ===================
+    const monthInputs = document.querySelectorAll('input[type="month"]');
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    monthInputs.forEach(input => {
+        if (!input.value) {
+            input.value = currentMonth;
+        }
+    });
+
+    // =================== LOADING INDICATOR FOR FORMS ===================
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                // Disable button
+                submitBtn.disabled = true;
+                
+                // Save original content
+                const originalHTML = submitBtn.innerHTML;
+                
+                // Show loading state
+                const formType = form.id;
+                let loadingText = '<i class="bi bi-hourglass-split spinner-border spinner-border-sm"></i> Processing...';
+                
+                if (formType === 'form-upload-dpm') {
+                    loadingText = '<i class="bi bi-hourglass-split"></i> Uploading & Auto-Processing Billing...';
+                } else if (formType === 'form-update-koreksi') {
+                    loadingText = '<i class="bi bi-hourglass-split"></i> Updating & Auto-Refreshing Billing...';
+                }
+                
+                submitBtn.innerHTML = loadingText;
+                
+                // Show progress toast (optional)
+                showProgressToast(formType);
+                
+                // Re-enable after timeout as fallback
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }, 60000); // 60 seconds timeout
+            }
+        });
+    });
+
+    // =================== PROGRESS TOAST ===================
+    function showProgressToast(formType) {
+        const messages = {
+            'form-upload-dpm': '📤 Uploading DPM... Billing akan otomatis diproses.',
+            'form-update-koreksi': '🔄 Updating DPM... Billing akan otomatis di-refresh.',
+            'form-upload-dil': '📥 Uploading DIL...'
+        };
+        
+        const message = messages[formType] || 'Processing...';
+        
+        // Create toast element (Bootstrap 5 style)
+        const toast = document.createElement('div');
+        toast.className = 'toast position-fixed bottom-0 end-0 m-3';
+        toast.setAttribute('role', 'alert');
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast-header bg-primary text-white">
+                <strong class="me-auto">
+                    <i class="bi bi-gear-fill"></i> Auto-Process
+                </strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Show toast (Bootstrap 5)
+        const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+        bsToast.show();
+        
+        // Remove after hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+
+    // =================== DEBUG LOG ===================
+    console.log('✅ Dashboard ULP Auto-Billing loaded');
+    console.log('📊 Summary count:', {{ summary|length }});
+});
+</script>
+
+<!-- Custom CSS for enhanced UI -->
+<style>
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+.progress-bar {
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.file-preview {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

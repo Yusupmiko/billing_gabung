@@ -1,0 +1,977 @@
+{% extends 'base.html'%}
+{% block title %}Dashboard Monitoring Snapbill{% endblock title %}
+{% block stylesheets %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+  rel="stylesheet"
+/>
+
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+  
+  body {
+    background-image: linear-gradient(180deg, #11909b 0%, #f8f9fa 100%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  .sidenav {
+    box-shadow: none !important;
+  }
+  
+  .main-content h1[id],
+  .main-content h2[id],
+  .main-content h3[id] {
+    scroll-margin-top: 80px;
+  }
+  
+  .data-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .card-header h1,
+  .card-header h2,
+  .card-header h3,
+  .card-header h4 {
+    margin-bottom: 0;
+    color: #344767 !important;
+  }
+
+  .recap-table {
+    font-size: 0.875rem;
+    color: #344767;
+  }
+
+  .recap-table thead th {
+    background-color: #26a69a;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    font-size: small !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid #4db6ac;
+  }
+
+  .recap-table .total-row {
+    background-color: #b2dfdb;
+    font-weight: bold;
+    color: #004d40;
+  }
+
+  .recap-table a {
+    color: #00796b;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+  
+  .recap-table a:hover {
+    color: #004d40;
+    text-decoration: underline;
+  }
+
+  #detailTable thead th {
+    position: sticky;
+    top: -1px;
+    background-color: #26a69a;
+    color: #ffffff !important;
+    z-index: 100;
+    border-bottom: 2px solid #26a69a;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    padding: 0.85rem 1rem;
+  }
+
+  #detailTable tbody tr.highlight {
+    background-color: #e0f2f1 !important;
+    font-weight: 500;
+  }
+
+  #detailTable a {
+    color: #26a69a;
+    font-weight: 600;
+    text-decoration: underline;
+    transition: color 0.2s ease-in-out;
+  }
+
+  #detailTable a:hover {
+    color: #1e847a;
+    text-decoration-style: solid;
+  }
+
+  .sahlwbp-cell {
+    background-color: #b3e5fc !important;
+    font-weight: bold;
+    color: #014361 !important;
+  }
+
+  #detailTableContainer {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  #saveChangesBtn .spinner-border {
+    margin-right: 0.5rem;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<main class="main-content position-relative border-radius-lg">
+  <div class="container-fluid py-4">
+    
+    <!-- ========================================
+         FILTER SECTION
+         ======================================== -->
+    <div class="filter-section">
+      <form method="GET" action="{{ url_for('monitoring.dashboard_monitoring') }}" class="row g-3 align-items-end">
+        
+        <!-- Filter UNITUP -->
+        {% if available_unitup %}
+        <div class="col-md-4">
+          <label for="unitupFilter" class="form-label">
+            <i class="fas fa-building"></i> Filter UNITUP
+          </label>
+          <select class="form-select" id="unitupFilter" name="unitup">
+            <option value="">-- Semua ULP --</option>
+            {% for ulp in available_unitup %}
+            <option value="{{ ulp.unitup }}" {% if selected_unitup == ulp.unitup %}selected{% endif %}>
+              {{ ulp.unitup }} - {{ ulp.nama_ulp }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        
+        <!-- Filter BLTH -->
+        <div class="col-md-4">
+          <label for="blthFilter" class="form-label">
+            <i class="fas fa-calendar"></i> Filter BLTH (Periode)
+          </label>
+          <select class="form-select" id="blthFilter" name="blth">
+            {% for blth in available_blth %}
+            <option value="{{ blth }}" {% if selected_blth == blth %}selected{% endif %}>
+              {{ blth }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <!-- Submit Button -->
+        
+         <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter"></i> Terapkan Filter
+          </button>
+        </div>
+       
+      </form>
+
+       <div class="col-md-4">
+        <!-- 🔹 Tombol Download Data -->
+        <button id="downloadExcelBtn" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Download Data
+        </button>
+
+        </div>
+      
+      <!-- Active Filter Info -->
+      {% if selected_unitup or selected_blth %}
+      <div class="mt-3">
+        <small class="text-muted">
+          <i class="fas fa-info-circle"></i> Filter Aktif: 
+          {% if selected_unitup %}UNITUP: <strong>{{ selected_unitup }}</strong>{% endif %}
+          {% if selected_blth %}{% if selected_unitup %} | {% endif %}BLTH: <strong>{{ selected_blth }}</strong>{% endif %}
+        </small>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 1: Pivot Marking Kepdir 1336 (Hari Baca) -->
+    <!-- ============================================ -->
+    <!-- <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2 id="pivot-marking-ulps">
+          📌 Pemeriksaan 1336.K/DIR/2011 (Rekap Hari Baca)
+        </h2>
+      </div>
+      <div class="card-body">
+        {% for tbl, name, up_filter in tables %}
+        <h4 id="pivot-marking-{{ tbl }}">{{ name }}</h4>
+        
+        {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+        
+        {# Pengecekan keberadaan dan validitas data #}
+        {% if pivot_key in pivot_tables_marking and pivot_tables_marking[pivot_key] %}
+          {% set pivot_data = pivot_tables_marking[pivot_key] %}
+          {% if pivot_data|length == 2 %}
+            {% set pivot, statuses = pivot_data %}
+          {% else %}
+            {% set pivot = {} %}
+            {% set statuses = [] %}
+          {% endif %}
+        {% else %}
+          {% set pivot = {} %}
+          {% set statuses = [] %}
+        {% endif %}
+        
+        {% if pivot %}
+        <div class="table-responsive p-0">
+          <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+            <thead class="thead-light">
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  BLTH - KDKELOMPOK
+                </th>
+                {% for s in statuses %}
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  {{ s }}
+                </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for label, row in pivot.items() %}
+              <tr>
+                <td>{{ label }}</td>
+                {% for s in statuses %}
+                {% set jumlah = row.get(s, 0) %}
+                <td>
+                  {% if jumlah > 0 %}
+                  <a href="#" class="detail-link" data-blth="{{ label.split(' - ')[0] }}" data-kdkelompok="{{ label.split(' - ')[1] }}" data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" data-table="{{ tbl }}" data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+                  {% else %}
+                  0
+                  {% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div> -->
+
+ <!-- ============================================ -->
+<!-- SECTION 2: Pivot Marking Kepdir 1336 (DLPD) -->
+<!-- ============================================ -->
+<!-- <div class="card data-card mb-4">
+  <div class="card-header pb-0">
+     <h2>📌 Pemeriksaan 1336.K/DIR/2011</h2>
+  </div>
+  <div class="card-body">
+    {% for tbl, name, up_filter in tables %}
+    <h4>{{ name }}</h4>
+    
+    {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+    
+    {# ✅ MAPPING DISPLAY NAME KE DATABASE NAME #}
+    {% set dlpd_to_db = {
+        'JN_720up': 'JN>720',
+        'JN_40Down': 'JN<40',
+        'Cek_Pecahan': 'PECAHAN',
+        'Cek_DIV/NA': 'DIV/NA',
+        'Naik_50%Up': 'NAIK>50%',
+        'kWh_Nol': 'KWH NOL',
+        'Stan_Mundur': 'STAN MUNDUR',
+        'TURUN<50%': 'TURUN<50%'
+    } %}
+    
+    {# Pengecekan keberadaan dan validitas data #}
+    {% if pivot_key in pivot_tables_dlpd and pivot_tables_dlpd[pivot_key] %}
+      {% set pivot_data = pivot_tables_dlpd[pivot_key] %}
+      {% if pivot_data|length == 2 %}
+        {% set pivot, statuses = pivot_data %}
+      {% else %}
+        {% set pivot = {} %}
+        {% set statuses = [] %}
+      {% endif %}
+    {% else %}
+      {% set pivot = {} %}
+      {% set statuses = [] %}
+    {% endif %}
+    
+    {% if pivot %}
+    <div class="table-responsive p-0">
+      <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+        <thead class="thead-light">
+          <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              DLPD_HITUNG
+            </th>
+            {% for s in statuses %}
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              {{ s }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for dlpd, row in pivot.items() %}
+          <tr>
+            <td>{{ dlpd }}</td>
+            {% for s in statuses %}
+            {% set jumlah = row.get(s, 0) %}
+            <td>
+              {% if jumlah > 0 %}
+              {# ✅ GUNAKAN MAPPING UNTUK CONVERT KE DATABASE NAME #}
+              {% set dlpd_db = dlpd_to_db.get(dlpd, dlpd) %}
+              <a href="#" 
+                 class="detail-link_dlpd" 
+                 data-dlpd="{{ dlpd_db }}" 
+                 data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" 
+                 data-table="{{ tbl }}" 
+                 data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+              {% else %}
+              0
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          <tr class="total-row">
+            <td><strong>JUMLAH</strong></td>
+            {% for s in statuses %}
+            {% set total = namespace(value=0) %}
+            {% for dlpd, row in pivot.items() %}
+            {% set total.value = total.value + row.get(s, 0) %}
+            {% endfor %}
+            <td><strong>{{ total.value }}</strong></td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+    {% endif %}
+    {% endfor %}
+  </div> -->
+
+<!-- ============================================ -->
+<!-- SECTION 2: Pivot Marking Kepdir 1336 (DLPD) - SEKARANG DI ATAS -->
+<!-- ============================================ -->
+<div class="card data-card mb-4">
+  <div class="card-header pb-0">
+     <h2>📌 Pemeriksaan 1336.K/DIR/2011</h2>
+  </div>
+  <div class="card-body">
+    {% for tbl, name, up_filter in tables %}
+    <h4>{{ name }}</h4>
+    
+    {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+    
+    {# ✅ MAPPING DISPLAY NAME KE DATABASE NAME #}
+    {% set dlpd_to_db = {
+        'JN_720up': 'JN>720',
+        'JN_40Down': 'JN<40',
+        'Cek_Pecahan': 'PECAHAN',
+        'Cek_DIV/NA': 'DIV/NA',
+        'Naik_50%Up': 'NAIK>50%',
+        'kWh_Nol': 'KWH NOL',
+        'Stan_Mundur': 'STAN MUNDUR',
+        'TURUN<50%': 'TURUN<50%'
+    } %}
+    
+    {# Pengecekan keberadaan dan validitas data #}
+    {% if pivot_key in pivot_tables_dlpd and pivot_tables_dlpd[pivot_key] %}
+      {% set pivot_data = pivot_tables_dlpd[pivot_key] %}
+      {% if pivot_data|length == 2 %}
+        {% set pivot, statuses = pivot_data %}
+      {% else %}
+        {% set pivot = {} %}
+        {% set statuses = [] %}
+      {% endif %}
+    {% else %}
+      {% set pivot = {} %}
+      {% set statuses = [] %}
+    {% endif %}
+    
+    {% if pivot %}
+    <div class="table-responsive p-0">
+      <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+        <thead class="thead-light">
+          <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              DLPD_HITUNG
+            </th>
+            {% for s in statuses %}
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              {{ s }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for dlpd, row in pivot.items() %}
+          <tr>
+            <td>{{ dlpd }}</td>
+            {% for s in statuses %}
+            {% set jumlah = row.get(s, 0) %}
+            <td>
+              {% if jumlah > 0 %}
+              {# ✅ GUNAKAN MAPPING UNTUK CONVERT KE DATABASE NAME #}
+              {% set dlpd_db = dlpd_to_db.get(dlpd, dlpd) %}
+              <a href="#" 
+                 class="detail-link_dlpd" 
+                 data-dlpd="{{ dlpd_db }}" 
+                 data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" 
+                 data-table="{{ tbl }}" 
+                 data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+              {% else %}
+              0
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          <tr class="total-row">
+            <td><strong>JUMLAH</strong></td>
+            {% for s in statuses %}
+            {% set total = namespace(value=0) %}
+            {% for dlpd, row in pivot.items() %}
+            {% set total.value = total.value + row.get(s, 0) %}
+            {% endfor %}
+            <td><strong>{{ total.value }}</strong></td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 1: Pivot Marking Kepdir 1336 (Hari Baca) - SEKARANG DI BAWAH -->
+<!-- ============================================ -->
+<div class="card data-card mb-4">
+  <div class="card-header pb-0">
+    <h2 id="pivot-marking-ulps">
+      📌 Pemeriksaan 1336.K/DIR/2011 (Rekap Hari Baca)
+    </h2>
+  </div>
+  <div class="card-body">
+    {% for tbl, name, up_filter in tables %}
+    <h4 id="pivot-marking-{{ tbl }}">{{ name }}</h4>
+    
+    {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+    
+    {# Pengecekan keberadaan dan validitas data #}
+    {% if pivot_key in pivot_tables_marking and pivot_tables_marking[pivot_key] %}
+      {% set pivot_data = pivot_tables_marking[pivot_key] %}
+      {% if pivot_data|length == 2 %}
+        {% set pivot, statuses = pivot_data %}
+      {% else %}
+        {% set pivot = {} %}
+        {% set statuses = [] %}
+      {% endif %}
+    {% else %}
+      {% set pivot = {} %}
+      {% set statuses = [] %}
+    {% endif %}
+    
+    {% if pivot %}
+    <div class="table-responsive p-0">
+      <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+        <thead class="thead-light">
+          <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              BLTH - KDKELOMPOK
+            </th>
+            {% for s in statuses %}
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              {{ s }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for label, row in pivot.items() %}
+          <tr>
+            <td>{{ label }}</td>
+            {% for s in statuses %}
+            {% set jumlah = row.get(s, 0) %}
+            <td>
+              {% if jumlah > 0 %}
+              <a href="#" class="detail-link" data-blth="{{ label.split(' - ')[0] }}" data-kdkelompok="{{ label.split(' - ')[1] }}" data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" data-table="{{ tbl }}" data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+              {% else %}
+              0
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+</div>
+
+
+    <!-- ============================================ -->
+    <!-- SECTION 3: Kumulatif Data Upload DPM -->
+    <!-- ============================================ -->
+    <!-- <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h1>📁 Kumulatif Data Upload DPM</h1>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive p-0">
+          <table class="table table-striped table-hover align-items-center recap-table">
+            <thead class="thead-light">
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Status Pemeriksaan
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Jumlah
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  Persentase (%)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in recap_all %}
+              <tr>
+                <td>{{ row.status }}</td>
+                <td>{{ row.jumlah }}</td>
+                <td>{{ "%.1f"|format(row.persentase) }}%</td>
+              </tr>
+              {% endfor %}
+              <tr class="total-row">
+                <td>Total</td>
+                <td>{{ total_all }}</td>
+                <td>100%</td>
+              </tr>
+              <tr>
+                <td><strong>NAIK 40%</strong></td>
+                <td colspan="2">
+                  {{ summary_all['NAIK']['jumlah'] }} ({{ summary_all['NAIK']['persentase'] }}%)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>TURUN 40%</strong></td>
+                <td colspan="2">
+                  {{ summary_all['TURUN']['jumlah'] }} ({{ summary_all['TURUN']['persentase'] }}%)
+                </td>
+              </tr>
+              <tr>
+                <td><strong>DIV/NA</strong></td>
+                <td colspan="2">
+                  {{ summary_all['DIV/NA']['jumlah'] }} ({{ summary_all['DIV/NA']['persentase'] }}%)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- ============================================ -->
+    <!-- SECTION 4: Detail Data Update Koreksi -->
+    <!-- ============================================ -->
+    <div class="card data-card mb-4">
+      <div class="card-header pb-0">
+        <h2 id="pivot-all-koreksi">✏️ Detail Data Update Koreksi</h2>
+      </div>
+      <div class="card-body">
+        {% for tbl, name, up_filter in tables %}
+        <h4 id="pivot-all-koreksi-{{ tbl }}">{{ name }}</h4>
+        
+        {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+        
+        {# Pengecekan keberadaan dan validitas data #}
+        {% if pivot_key in pivot_tables_koreksi and pivot_tables_koreksi[pivot_key] %}
+          {% set pivot_data = pivot_tables_koreksi[pivot_key] %}
+          {% if pivot_data|length == 2 %}
+            {% set pivot, statuses = pivot_data %}
+          {% else %}
+            {% set pivot = {} %}
+            {% set statuses = [] %}
+          {% endif %}
+        {% else %}
+          {% set pivot = {} %}
+          {% set statuses = [] %}
+        {% endif %}
+        
+        {% if pivot %}
+        <div class="table-responsive p-0">
+          <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+            <thead class="thead-light">
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  BLTH - KDKELOMPOK
+                </th>
+                {% for s in statuses %}
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                  {{ s }}
+                </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for label, row in pivot.items() %}
+              <tr>
+                <td>{{ label }}</td>
+                {% for s in statuses %}
+                {% set jumlah = row.get(s, 0) %}
+                <td>
+                  {% if jumlah > 0 %}
+                  <a href="#" class="detail-link_koreksi" data-blth="{{ label.split(' - ')[0] }}" data-kdkelompok="{{ label.split(' - ')[1] }}" data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" data-table="{{ tbl }}" data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+                  {% else %}
+                  0
+                  {% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+
+<!-- ============================================ -->
+<!-- SECTION 5: Pivot PLG GANDA (JUGA PERLU DIPERBAIKI) -->
+<!-- ============================================ -->
+<!-- <div class="card data-card mb-4">
+  <div class="card-header pb-0">
+    <h2>📌 Pivot PLG GANDA</h2>
+  </div>
+  <div class="card-body">
+    {% for tbl, name, up_filter in tables %}
+    <h4>{{ name }}</h4>
+    
+    {% set pivot_key = "{}_{}" .format(name, up_filter) %}
+    
+    {# ✅ MAPPING DISPLAY NAME KE DATABASE NAME #}
+    {% set dlpd_to_db = {
+        'JN_720up': 'JN>720',
+        'JN_40Down': 'JN<40',
+        'Cek_Pecahan': 'PECAHAN',
+        'Cek_DIV/NA': 'DIV/NA',
+        'Naik_50%Up': 'NAIK>50%',
+        'kWh_Nol': 'KWH NOL',
+        'Stan_Mundur': 'STAN MUNDUR',
+        'TURUN<50%': 'TURUN<50%'
+    } %}
+    
+    {# Pengecekan keberadaan dan validitas data #}
+    {% if pivot_key in pivot_tables_ganda and pivot_tables_ganda[pivot_key] %}
+      {% set pivot_data = pivot_tables_ganda[pivot_key] %}
+      {% if pivot_data|length == 2 %}
+        {% set pivot, statuses = pivot_data %}
+      {% else %}
+        {% set pivot = {} %}
+        {% set statuses = [] %}
+      {% endif %}
+    {% else %}
+      {% set pivot = {} %}
+      {% set statuses = [] %}
+    {% endif %}
+    
+    {% if pivot %}
+    <div class="table-responsive p-0">
+      <table class="table table-striped table-hover align-items-center mb-4 recap-table">
+        <thead class="thead-light">
+          <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              DLPD_HITUNG
+            </th>
+            {% for s in statuses %}
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              {{ s }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for dlpd, row in pivot.items() %}
+          <tr>
+            <td>{{ dlpd if dlpd else '(Kosong)' }}</td>
+            {% for s in statuses %}
+            {% set jumlah = row.get(s, 0) %}
+            <td>
+              {% if jumlah > 0 %}
+              {# ✅ GUNAKAN MAPPING UNTUK CONVERT KE DATABASE NAME #}
+              {% set dlpd_db = dlpd_to_db.get(dlpd, dlpd) %}
+              <a href="#" 
+                 class="detail-link_ganda" 
+                 data-dlpd="{{ dlpd_db }}" 
+                 data-hasilpemeriksaan="{{ s if s != 'BELUM DIISI' else '' }}" 
+                 data-table="{{ tbl }}" 
+                 data-unitup="{{ up_filter }}">{{ jumlah }}</a>
+              {% else %}
+              0
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          <tr class="total-row">
+            <td><strong>JUMLAH</strong></td>
+            {% for s in statuses %}
+            {% set total = namespace(value=0) %}
+            {% for dlpd, row in pivot.items() %}
+            {% set total.value = total.value + row.get(s, 0) %}
+            {% endfor %}
+            <td><strong>{{ total.value }}</strong></td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">Tidak ada data untuk ditampilkan.</p>
+    {% endif %}
+    {% endfor %}
+  </div> -->
+</div>
+
+
+  </div>
+</main>
+
+<!-- ============================================ -->
+<!-- MODAL: Detail Pelanggan -->
+<!-- ============================================ -->
+<div
+  class="modal fade"
+  id="detailModal"
+  tabindex="-1"
+  aria-labelledby="detailModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailModalLabel">Detail Pelanggan</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="detailTableContainer">
+          <table
+            class="table table-bordered table-striped table-hover table-sm align-middle"
+            id="detailTable"
+          >
+            <thead id="detailTableHead"></thead>
+            <tbody id="detailTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Tutup
+        </button>
+        <button type="button" class="btn btn-primary" id="saveChangesBtn">
+          Simpan Perubahan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+
+ // Debug: Log mapping yang digunakan
+  const dlpd_mapping = {
+        'Jam Nyala > 720': 'JN>720',
+        'Jam Nyala < 40': 'JN<40',
+        'Pecahan': 'PECAHAN',
+        'DIV/NA': 'DIV/NA',
+        'Naik > 50%': 'NAIK>50%',
+        'KWh Nol': 'KWH NOL',
+        'Stan Mundur': 'STAN MUNDUR',
+        'Turun < 50%': 'TURUN<50%'
+  };
+  
+  console.log("=== DLPD MAPPING DEBUG ===");
+  console.log(dlpd_mapping);
+  
+  // Debug: Log semua link DLPD yang di-generate
+  $(document).ready(function() {
+    console.log("\n=== GENERATED DLPD LINKS ===");
+    $('.detail-link_dlpd').each(function(index) {
+      const displayText = $(this).text().trim();
+      const dlpdParam = $(this).data('dlpd');
+      const hasilParam = $(this).data('hasilpemeriksaan');
+      console.log(`${index + 1}. Display: "${displayText}" | data-dlpd: "${dlpdParam}" | hasil: "${hasilParam}"`);
+    });
+    
+    console.log("\n=== GENERATED GANDA LINKS ===");
+    $('.detail-link_ganda').each(function(index) {
+      const displayText = $(this).text().trim();
+      const dlpdParam = $(this).data('dlpd');
+      const hasilParam = $(this).data('hasilpemeriksaan');
+      console.log(`${index + 1}. Display: "${displayText}" | data-dlpd: "${dlpdParam}" | hasil: "${hasilParam}"`);
+    });
+  });
+
+  function open3Foto(idpel, blthKini) {
+    const path = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    function getPreviousBlth(blth) {
+      let year = parseInt(blth.substring(0, 4));
+      let month = parseInt(blth.substring(4, 6));
+      month -= 1;
+      if (month === 0) {
+        month = 12;
+        year -= 1;
+      }
+      return year.toString() + (month < 10 ? "0" + month : month);
+    }
+    const blthLalu = getPreviousBlth(blthKini);
+    const blthLalu2 = getPreviousBlth(blthLalu);
+    const width = 250, height = 1000, spacing = 10, top = 10;
+    const left1 = 10, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    window.open(`${path}${idpel}&blth=${blthKini}`, "_foto1", `width=${width},height=${height},top=${top},left=${left1},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu}`, "_foto2", `width=${width},height=${height},top=${top},left=${left2},resizable=yes`);
+    window.open(`${path}${idpel}&blth=${blthLalu2}`, "_foto3", `width=${width},height=${height},top=${top},left=${left3},resizable=yes`);
+  }
+
+  function open3FotoAP2T(idpel, blthKini) {
+    const path = "https://ap2t.pln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    function getPreviousBlth(blth) {
+      let year = parseInt(blth.substring(0, 4));
+      let month = parseInt(blth.substring(4, 6));
+      month -= 1;
+      if (month === 0) {
+        month = 12;
+        year -= 1;
+      }
+      return year.toString() + (month < 10 ? "0" + month : month);
+    }
+    const blthLalu = getPreviousBlth(blthKini);
+    const blthLalu2 = getPreviousBlth(blthLalu);
+    const width = 250, height = 1000, spacing = 10, top = 10;
+    const left1 = 10, left2 = left1 + width + spacing, left3 = left2 + width + spacing;
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthKini}&isPhoto=null`, "_foto1", `width=${width},height=${height},top=${top},left=${left1},resizable=yes`);
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthLalu}&isPhoto=null`, "_foto2", `width=${width},height=${height},top=${top},left=${left2},resizable=yes`);
+    window.open(`${path}${idpel}&nomor_meter=null&fotoke=null&blth=${blthLalu2}&isPhoto=null`, "_foto3", `width=${width},height=${height},top=${top},left=${left3},resizable=yes`);
+  }
+
+  function highlightModalTable() {
+    document.querySelectorAll("#detailTable tbody tr").forEach((row) => {
+      row.addEventListener("click", function () {
+        document.querySelectorAll("#detailTable tbody tr").forEach((r) => r.classList.remove("highlight"));
+        this.classList.add("highlight");
+      });
+    });
+    const table = document.querySelector("#detailTable");
+    if (!table) return;
+    setTimeout(() => {
+      const headerCells = Array.from(table.querySelectorAll("thead th"));
+      const sahlwbpIndex = headerCells.findIndex((th) => th.innerText.trim().toUpperCase() === "SAHLWBP");
+      if (sahlwbpIndex !== -1) {
+        table.querySelectorAll("tbody tr").forEach((row) => {
+          const cell = row.cells[sahlwbpIndex];
+          if (cell) {
+            cell.classList.add("sahlwbp-cell");
+          }
+        });
+      }
+    }, 100);
+  }
+
+// ================================================================
+// DOWNLOAD EXCEL HANDLER
+// ================================================================
+$(document).ready(function() {
+    $("#downloadExcelBtn").on("click", function() {
+        // Ambil filter yang aktif
+        const unitup = $("#unitupFilter").val() || '';
+        const blth = $("#blthFilter").val() || '';
+        
+        // Validasi
+        if (!blth) {
+            alert('⚠️ Pilih BLTH terlebih dahulu!');
+            return;
+        }
+        
+        // Konfirmasi
+        const confirmMsg = unitup 
+            ? `Download data untuk UNITUP ${unitup}, BLTH ${blth}?`
+            : `Download semua data untuk BLTH ${blth}?`;
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Show loading
+        const originalHtml = $(this).html();
+        $(this).prop('disabled', true).html(
+            '<span class="spinner-border spinner-border-sm"></span> Downloading...'
+        );
+        
+        // Build download URL
+        let downloadUrl = `/download_billing?blth=${blth}`;
+        if (unitup) {
+            downloadUrl += `&unitup_filter=${unitup}`;
+        }
+        
+        console.log('📥 Downloading:', downloadUrl);
+        
+        // Download via iframe (agar tidak refresh page)
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+        
+        // Reset button setelah 3 detik
+        setTimeout(() => {
+            $(this).prop('disabled', false).html(originalHtml);
+            document.body.removeChild(iframe);
+        }, 3000);
+    });
+});
+
+</script>
+
+<!-- Script utama untuk handle semua modal dan AJAX -->
+<script src="{{ url_for('static', filename='js/dashboard_monitoring.js') }}"></script>
+
+{% endblock javascripts %}

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Billing System PLN{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* ============================================
+           PLN CORPORATE COLORS & VARIABLES
+        ============================================ */
+        :root {
+            --pln-blue: #0066CC;
+            --pln-blue-dark: #004999;
+            --pln-blue-light: #3399FF;
+            --pln-yellow: #FFD700;
+            --pln-yellow-dark: #FFC700;
+            --pln-gradient: linear-gradient(135deg, #0066CC 0%, #004999 100%);
+            --pln-gradient-reverse: linear-gradient(135deg, #004999 0%, #0066CC 100%);
+            --shadow-sm: 0 2px 8px rgba(0, 102, 204, 0.1);
+            --shadow-md: 0 4px 16px rgba(0, 102, 204, 0.15);
+            --shadow-lg: 0 8px 24px rgba(0, 102, 204, 0.2);
+        }
+
+        /* ============================================
+           GLOBAL SETTINGS
+        ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-size: 13px;
+            line-height: 1.4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           PLN SIDEBAR - STICKY WITH CORPORATE DESIGN
+        ============================================ */
+        /* .sidebar {
+            background: var(--pln-gradient);
+            width: 220px !important;
+            padding: 0;
+            box-shadow: 4px 0 20px rgba(0, 102, 204, 0.2);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100 !important;
+        } */
+/* ============================================
+           PLN SIDEBAR - STICKY WITH CORPORATE DESIGN
+        ============================================ */
+        .sidebar {
+            background: var(--pln-gradient);
+            width: 220px !important;
+            padding: 0;
+            box-shadow: 4px 0 20px rgba(0, 102, 204, 0.2);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1050 !important;
+            flex-shrink: 0;
+        }
+        /* PLN Header - TANPA ANIMASI */
+        .sidebar-header {
+            background: var(--pln-blue-dark);
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 3px solid var(--pln-yellow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ❌ HAPUS animasi pulse di header */
+        /* .sidebar-header::before - DIHAPUS */
+
+        .sidebar-logo {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ❌ HAPUS animasi electric pada icon */
+        .sidebar-logo i {
+            font-size: 2.5rem;
+            color: var(--pln-yellow);
+            /* animation: electric 2s ease-in-out infinite; - DIHAPUS */
+        }
+
+        .sidebar-logo h4 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin: 10px 0 5px 0;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-logo p {
+            font-size: 0.75rem;
+            color: var(--pln-yellow);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Navigation Links */
+        .sidebar-nav {
+            padding: 15px 10px;
+        }
+
+        .nav-section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 15px 5px;
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link {
+            padding: 12px 15px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--pln-yellow);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar .nav-link:hover::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* User Info in Sidebar */
+        .sidebar-footer {
+            padding: 15px;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .user-info strong {
+            color: var(--pln-yellow);
+            font-weight: 600;
+        }
+
+        /* ============================================
+           NAVBAR - PLN BRANDED (TANPA ANIMASI)
+        ============================================ */
+        .navbar {
+            padding: 12px 20px !important;
+            background: white !important;
+            box-shadow: var(--shadow-md);
+            border-bottom: 3px solid var(--pln-blue);
+            position: relative;
+            z-index: 100 !important;
+        }
+
+        /* ❌ HAPUS animasi slideRight pada navbar */
+        /* .navbar::after - DIHAPUS */
+
+        .navbar-brand {
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
+            color: var(--pln-blue) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand i {
+            color: var(--pln-yellow);
+        }
+
+        .navbar .text-muted {
+            font-size: 0.85rem;
+            color: var(--pln-blue-dark) !important;
+            font-weight: 500;
+        }
+
+        /* ============================================
+           CONTENT AREA
+        ============================================ */
+        .content-wrapper {
+            flex-grow: 1;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+        }
+
+        .container-fluid {
+            padding: 20px !important;
+        }
+
+        /* ============================================
+           PLN CARDS
+        ============================================ */
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background: white;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background: var(--pln-gradient);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header i {
+            color: var(--pln-yellow);
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: white;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--pln-gradient);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--pln-blue);
+            margin: 10px 0;
+        }
+
+        .stat-card p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* ============================================
+           PLN BADGES
+        ============================================ */
+        .badge-naik { 
+            background: linear-gradient(135deg, #28a745, #20c997);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+        .badge-turun { 
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+        .badge-div { 
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #000;
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        }
+        .badge-aman { 
+            background: linear-gradient(135deg, var(--pln-blue), var(--pln-blue-light));
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+        }
+
+        /* ============================================
+           BUTTONS - PLN STYLE
+        ============================================ */
+        .btn-primary {
+            background: var(--pln-gradient);
+            border: none;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--pln-gradient-reverse);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--pln-blue);
+            color: var(--pln-blue);
+            font-weight: 600;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--pln-gradient);
+            border-color: var(--pln-blue);
+            color: white;
+        }
+
+        /* ============================================
+           ALERTS - PLN THEMED
+        ============================================ */
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ============================================
+           TABLES - PLN STYLE
+        ============================================ */
+        .table {
+            font-size: 0.85rem;
+        }
+
+        .table thead {
+            background: var(--pln-gradient);
+            color: white;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(0, 102, 204, 0.05);
+            transform: scale(1.01);
+        }
+
+        /* ============================================
+           ANIMATIONS & EFFECTS (MINIMAL)
+        ============================================ */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Scrollbar Styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--pln-yellow);
+            border-radius: 3px;
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+        ============================================ */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100% !important;
+                height: auto;
+                position: relative;
+            }
+        }
+
+        /* ============================================
+           UTILITY CLASSES
+        ============================================ */
+        .text-pln-blue { color: var(--pln-blue); }
+        .text-pln-yellow { color: var(--pln-yellow); }
+        .bg-pln-blue { background: var(--pln-blue); }
+        .bg-pln-gradient { background: var(--pln-gradient); }
+
+        /* ============================================
+           DASHBOARD MONITORING SPECIFIC STYLES
+        ============================================ */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--pln-blue);
+        }
+
+        .filter-section .form-label {
+            color: var(--pln-blue-dark);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .filter-section .form-label i {
+            color: var(--pln-yellow);
+            margin-right: 5px;
+        }
+
+        /* Data Cards untuk Monitoring */
+        .data-card {
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            border: none;
+            background: white;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .data-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .data-card .card-header {
+            background: var(--pln-gradient);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+        }
+
+        .data-card .card-header h2,
+        .data-card .card-header h4 {
+            color: white !important;
+            font-weight: 600;
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        /* Recap Table dengan tema PLN */
+        .recap-table {
+            font-size: 0.85rem;
+            color: #344767;
+            margin: 0;
+        }
+
+        .recap-table thead th {
+            background: var(--pln-gradient) !important;
+            color: white !important;
+            opacity: 1 !important;
+            font-size: 0.8rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--pln-yellow);
+            padding: 12px 10px;
+        }
+
+        .recap-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .recap-table tbody tr:hover {
+            background-color: rgba(0, 102, 204, 0.05);
+            transform: scale(1.01);
+        }
+
+        .recap-table .total-row {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(0, 102, 204, 0.05));
+            font-weight: bold;
+            color: var(--pln-blue-dark);
+            border-top: 2px solid var(--pln-blue);
+        }
+
+        .recap-table a {
+            color: var(--pln-blue);
+            font-weight: 600;
+            text-decoration: none;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .recap-table a:hover {
+            background: var(--pln-blue);
+            color: white;
+            text-decoration: none;
+            transform: scale(1.1);
+        }
+
+        /* Detail Table dalam Modal */
+        #detailTable {
+            font-size: 0.8rem;
+        }
+
+        #detailTable thead th {
+            position: sticky;
+            top: -1px;
+            background: var(--pln-gradient) !important;
+            color: white !important;
+            z-index: 100;
+            border-bottom: 2px solid var(--pln-yellow);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            padding: 12px 10px;
+        }
+
+        #detailTable tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        #detailTable tbody tr:hover {
+            background-color: rgba(0, 102, 204, 0.08);
+        }
+
+        #detailTable tbody tr.highlight {
+            background: linear-gradient(135deg, rgba(0, 102, 204, 0.15), rgba(0, 102, 204, 0.1)) !important;
+            font-weight: 600;
+            border-left: 4px solid var(--pln-yellow);
+        }
+
+        #detailTable a {
+            color: var(--pln-blue);
+            font-weight: 600;
+            text-decoration: underline;
+            transition: color 0.2s ease-in-out;
+        }
+
+        #detailTable a:hover {
+            color: var(--pln-blue-dark);
+            text-decoration-style: solid;
+        }
+
+        .sahlwbp-cell {
+            background: linear-gradient(135deg, #b3e5fc, #81d4fa) !important;
+            font-weight: bold;
+            color: #014361 !important;
+            box-shadow: inset 0 0 0 1px rgba(0, 102, 204, 0.3);
+        }
+
+        #detailTableContainer {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        /* Modal PLN Styled */
+        .modal-header {
+            background: var(--pln-gradient);
+            color: white;
+            border-bottom: 3px solid var(--pln-yellow);
+        }
+
+        .modal-header .modal-title {
+            font-weight: 600;
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(0, 102, 204, 0.1);
+        }
+
+        /* Loading Spinner */
+        #saveChangesBtn .spinner-border {
+            margin-right: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            border-width: 2px;
+        }
+
+        /* ============================================
+           VIEW BILLING PAGE SPECIFIC FIXES
+        ============================================ */
+        .sticky-header {
+            z-index: 90 !important;
+            position: relative;
+        }
+
+        .table-responsive {
+            z-index: 1 !important;
+            position: relative;
+        }
+
+        .table thead th {
+            z-index: 80 !important;
+        }
+
+        .loading-overlay {
+            z-index: 2000 !important;
+        }
+
+        #saveVerifikasiBtn {
+            z-index: 1400 !important;
+        }
+
+        .modal {
+            z-index: 1600 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1550 !important;
+        }
+
+        .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus {
+            border-color: var(--pln-blue);
+            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.15);
+        }
+
+        .filter-section small {
+            background: rgba(0, 102, 204, 0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            border-left: 3px solid var(--pln-yellow);
+        }
+
+        .card-body h4 {
+            color: var(--pln-blue-dark);
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--pln-yellow);
+            display: inline-block;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+            padding: 20px;
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <div class="d-flex">
+        <!-- PLN Sidebar -->
+        <div class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <h4>PLN BILLING</h4>
+                    <p>Monitoring System</p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="sidebar-nav">
+                {% if session.role == 'UP3' %}
+                    <div class="nav-section-title">Management</div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('kelola_user') }}">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Kelola User</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('dashboard_up3') }}">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard UP3</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            <span>Dashboard Billing</span>
+                        </a>
+                        <!-- Di bagian sidebar navigation, tambahkan menu ini -->
+<div class="nav-section-title">Tools</div>
+<nav class="nav flex-column">
+    <a class="nav-link" href="{{ url_for('cek_foto') }}">
+        <i class="bi bi-camera-fill"></i>
+        <span>Cek Foto Pelanggan</span>
+    </a>
+</nav>
+                    </nav>
+                    
+                    <div class="nav-section-title">System</div>
+                {% else %}
+                    <div class="nav-section-title">Menu Utama</div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="{{ url_for('dashboard_ulp') }}">
+                            <i class="bi bi-house-door-fill"></i>
+                            <span>Rekap Data</span>
+                        </a>
+                        <a class="nav-link" href="{{ url_for('monitoring.dashboard_monitoring') }}">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            <span>Data Billing</span>
+                        </a>
+
+                                <!-- Di bagian sidebar navigation, tambahkan menu ini -->
+<div class="nav-section-title">Tools</div>
+<nav class="nav flex-column">
+    <a class="nav-link" href="{{ url_for('cek_foto') }}">
+        <i class="bi bi-camera-fill"></i>
+        <span>Cek Foto Pelanggan</span>
+    </a>
+</nav>
+                    </nav>
+                {% endif %}
+
+                <div class="nav-section-title" style="margin-top: 20px;">Account</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="{{ url_for('logout') }}" style="color: var(--pln-yellow);">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Footer User Info -->
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div><i class="bi bi-person-circle"></i> <strong>{{ session.username }}</strong></div>
+                    <div><i class="bi bi-building"></i> {{ session.unitup or session.nama_ulp or 'N/A' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Navbar -->
+            <nav class="navbar navbar-light">
+                <div class="container-fluid">
+                    <span class="navbar-brand">
+                        <i class="bi bi-lightning-fill"></i>
+                        {% block page_title %}Dashboard{% endblock %}
+                    </span>
+                    <span class="text-muted">
+                        <i class="bi bi-calendar3"></i>
+                        {{ session.nama_ulp }}
+                    </span>
+                </div>
+            </nav>
+
+            <!-- Content Container -->
+            <div class="container-fluid fade-in">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-info-circle-fill"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Main Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Active link highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
+    {% block javascripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

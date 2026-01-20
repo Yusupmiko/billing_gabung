@@ -1,0 +1,1664 @@
+{% extends "base.html" %}
+
+{% block title %}Data Billing - SnapBill{% endblock %}
+
+{% block extra_css %}
+<style>
+
+/* ========================================
+   23. HIDE FOTO_3BLN COLUMN
+======================================== */
+/* Sembunyikan header kolom foto_3bln */
+table thead th:has([data-column="foto_3bln"]),
+table thead th[data-column="foto_3bln"] {
+    display: none !important;
+}
+
+/* Sembunyikan cell di body yang sesuai dengan kolom foto_3bln */
+/* Metode 1: Jika kolom memiliki class khusus */
+table tbody td.foto-3bln-column {
+    display: none !important;
+}
+
+/* Metode 2: Jika Anda tahu index kolom (misalnya kolom ke-N) */
+/* Contoh: jika foto_3bln adalah kolom ke-15, gunakan nth-child(15) */
+table thead th:nth-child(15),
+table tbody td:nth-child(15) {
+    display: none !important;
+}
+
+/* Metode 3: Menggunakan attribute selector jika ada atribut khusus */
+table thead th[data-field="foto_3bln"],
+table tbody td[data-field="foto_3bln"] {
+    display: none !important;
+}
+
+/* Alternatif: Sembunyikan berdasarkan konten text header */
+table thead th {
+    &:has-text("FOTO_3BLN") {
+        display: none !important;
+    }
+}
+/* Sembunyikan kolom foto_3bln */
+table thead th:nth-child(24),
+table tbody td:nth-child(24) {
+    display: none !important;
+}
+/* ========================================
+   1. TABLE RESPONSIVE
+======================================== */
+.table-responsive {
+    font-size: 0.7rem;
+    max-height: calc(100vh - 320px);
+    overflow: auto;
+    border: 2px solid #495057;
+    position: relative;
+    z-index: 1 !important;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+/* ========================================
+   2. TABLE STRUCTURE
+======================================== */
+table {
+    margin-bottom: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #495057;
+    position: relative;
+}
+
+/* ========================================
+   3. STICKY TABLE HEADER
+======================================== */
+table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10 !important;
+}
+
+table thead th {
+    position: sticky;
+    top: 0;
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 600;
+    padding: 4px 6px;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    border: 1px solid #fff;
+    border-right: 1px solid #0a58ca;
+    border-bottom: 2px solid #0a58ca;
+    z-index: 10 !important;
+    line-height: 1.2;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* ========================================
+   4. SORTABLE HEADER
+======================================== */
+table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    padding-right: 24px !important;
+}
+
+table thead th.sortable::after {
+    content: "⇅";
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+    font-size: 0.8rem;
+}
+
+table thead th.sortable:hover {
+    background-color: #0a58ca !important;
+}
+
+table thead th.sortable:hover::after {
+    opacity: 0.6;
+}
+
+table thead th.sort-asc::after {
+    content: "▲";
+    opacity: 1;
+    color: #ffd700;
+}
+
+table thead th.sort-desc::after {
+    content: "▼";
+    opacity: 1;
+    color: #ffd700;
+}
+
+/* ========================================
+   5. SORTED COLUMN
+======================================== */
+table thead th.sorted {
+    background-color: #0a58ca !important;
+    z-index: 11 !important;
+}
+
+/* ========================================
+   6. TABLE BODY
+======================================== */
+table tbody {
+    position: relative;
+    z-index: 1;
+}
+
+table tbody td {
+    padding: 3px 6px;
+    vertical-align: middle;
+    border: 1px solid #ced4da;
+    border-right: 1px solid #adb5bd;
+    border-bottom: 1px solid #adb5bd;
+    white-space: nowrap;
+    line-height: 1.2;
+    background-color: white;
+    font-size: 0.7rem;
+}
+
+table tbody tr:nth-child(even) td {
+    background-color: #f8f9fa;
+}
+
+table tbody tr:hover td {
+    background-color: #e7f1ff !important;
+    cursor: pointer;
+}
+
+/* ========================================
+   7. SPECIAL COLUMNS
+======================================== */
+.sahlwbp-header {
+    background-color: #0a58ca !important;
+}
+
+.sahlwbp-cell-blue {
+    background-color: #e7f1ff !important;
+}
+
+.sahlwbp-cell-blue-positive {
+    background-color: #cfe2ff !important;
+    font-weight: 600;
+}
+
+table tbody td.sorted-column {
+    background-color: #f0f8ff !important;
+}
+
+table tbody tr:nth-child(even) td.sorted-column {
+    background-color: #e6f2ff !important;
+}
+
+/* ========================================
+   8. ACTIVE ROW
+======================================== */
+table tbody tr.active-row,
+table.dataTable tbody tr.active-row {
+    background-color: #d8f3dc !important;
+    color: #1b4332 !important;
+    font-weight: 600 !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-left: 4px solid #40916c !important;
+}
+
+table tbody tr.active-row:hover,
+table.dataTable tbody tr.active-row:hover {
+    background-color: #b7e4c7 !important;
+}
+
+table tbody tr.active-row td,
+table.dataTable tbody tr.active-row td {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+/* ========================================
+   9. SCROLLBAR
+======================================== */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========================================
+   10. LAYOUT STRUCTURE
+======================================== */
+body {
+    font-size: 11px !important;
+    overflow-x: hidden;
+}
+
+.content-wrapper {
+    flex: 1 !important;
+    min-width: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    overflow-x: hidden;
+}
+
+/* ========================================
+   11. STICKY HEADER
+======================================== */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 6px 0 !important;
+    margin-bottom: 6px !important;
+}
+
+.sticky-header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.sticky-header .badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+}
+
+/* ========================================
+   12. CARD STYLES
+======================================== */
+.card {
+    margin-bottom: 6px;
+    border: 1px solid #dee2e6;
+    position: relative;
+    z-index: 1 !important;
+}
+
+.card-body {
+    padding: 8px;
+}
+
+.card-header {
+    padding: 5px 8px;
+    font-size: 0.9rem;
+}
+
+.card-header h5 {
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.row.g-3 {
+    row-gap: 6px !important;
+}
+
+/* ========================================
+   13. FORM ELEMENTS
+======================================== */
+.form-label {
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.form-select, .form-control {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+    height: 26px;
+}
+
+textarea.form-control {
+    height: auto !important;
+}
+
+.btn {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+.input-group-text {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+}
+
+/* ========================================
+   14. TABS
+======================================== */
+.nav-tabs {
+    margin-bottom: 0;
+    border-bottom: 1px solid #dee2e6;
+    position: relative;
+    z-index: 1 !important;
+}
+
+.nav-tabs .nav-link {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 3px 3px 0 0;
+    margin-right: 2px;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #0d6efd;
+    color: white !important;
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link:not(.active) {
+    background-color: #f1f3f5;
+}
+
+/* ========================================
+   15. PAGINATION
+======================================== */
+.bi {
+    font-size: 0.8rem;
+}
+
+.pagination {
+    margin: 8px 0;
+    justify-content: center;
+}
+
+.pagination .page-link {
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    margin: 0 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* ========================================
+   16. LOADING OVERLAY
+======================================== */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000 !important;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #0d6efd;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   17. SAVE BUTTON
+======================================== */
+#saveVerifikasiBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000 !important;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: none;
+}
+
+#saveVerifikasiBtn.show {
+    display: block;
+    animation: bounceIn 0.4s ease-out;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ========================================
+   18. VERIFIKASI INPUTS
+======================================== */
+.verifikasi-input {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    width: 100%;
+    background: #fffacd;
+}
+
+.verifikasi-input:focus {
+    background: white;
+    border-color: #0d6efd;
+    outline: none;
+}
+
+.verifikasi-select {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    width: 100%;
+    background: #fffacd;
+}
+
+.verifikasi-select:focus {
+    background: white;
+    border-color: #0d6efd;
+}
+
+.has-changes {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+}
+
+/* ========================================
+   19. GRAFIK CANVAS
+======================================== */
+#grafikContent {
+    min-height: 400px;
+    height: 400px;
+    position: relative;
+    padding: 10px;
+}
+
+#grafikChart {
+    max-height: 400px !important;
+}
+
+/* ========================================
+   20. MODAL - RADICAL FIX (NO BACKDROP)
+======================================== */
+#grafikModal {
+    z-index: 9999 !important;
+}
+
+#grafikModal.show {
+    display: block !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+#grafikModal .modal-dialog {
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    margin: 30px auto !important;
+}
+
+#grafikModal .modal-content {
+    z-index: 10001 !important;
+    pointer-events: auto !important;
+    background: white !important;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+}
+
+#grafikModal .modal-header,
+#grafikModal .modal-body {
+    pointer-events: auto !important;
+}
+
+/* HIDE BOOTSTRAP BACKDROP */
+.modal-backdrop {
+    display: none !important;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+}
+
+body.modal-open .sidebar {
+    z-index: 100 !important;
+}
+
+/* ========================================
+   21. HIGHLIGHT & SPECIAL
+======================================== */
+.highlight {
+    background-color: #90EE90 !important;
+    font-weight: 600;
+}
+
+/* ========================================
+   22. RESPONSIVE
+======================================== */
+@media (max-width: 768px) {
+    .table-responsive {
+        max-height: calc(100vh - 250px);
+    }
+    
+    table thead th {
+        font-size: 0.65rem;
+        padding: 3px 4px;
+    }
+    
+    table tbody td {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+<!-- ================= HEADER ================= -->
+<div class="row sticky-header align-items-center mb-3">
+    <div class="col-8">
+        <h2 class="mb-0">
+            <i class="bi bi-table"></i> Data Billing - {{ username|upper }}
+            {% if role == 'ULP' %}
+                <span class="badge bg-primary">{{ unitup }}</span>
+            {% elif unitup_filter %}
+                <span class="badge bg-success">UP3</span>
+                <span class="badge bg-info">UNITUP: {{ unitup_filter }}</span>
+            {% else %}
+                <span class="badge bg-success">UP3</span>
+            {% endif %}
+        </h2>
+    </div>
+
+    <div class="col-4 text-end">
+        <div class="d-flex justify-content-end align-items-center gap-2">
+            <!-- 🔹 Tombol Kembali ke Dashboard -->
+            <a href="/dashboard_up3" class="btn btn-outline-primary" title="Kembali ke Dashboard">
+                <i class="bi bi-house-door"></i> Kembali
+            </a>
+            <!-- 🔹 Tombol Download Data -->
+            <button id="downloadExcelBtn" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Download Data
+            </button>
+            
+            <!-- ✅ Tombol Reset Filter (jika ada unitup_filter) -->
+            {% if unitup_filter %}
+            <a href="/view_billing" class="btn btn-outline-secondary" title="Lihat Semua Data">
+                <i class="bi bi-x-circle"></i> Reset
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<!-- ================= FILTER CARD ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end" id="filterForm">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <input type="hidden" name="page" value="1">
+            
+            <!-- ✅ SIMPAN unitup_filter sebagai hidden input jika ada -->
+            {% if unitup_filter %}
+            <input type="hidden" name="unitup_filter" value="{{ unitup_filter }}">
+            {% endif %}
+
+            <!-- 🔹 Periode -->
+            <div class="col-2">
+                <label class="form-label"><i class="bi bi-calendar3"></i> Periode</label>
+                <select name="blth" id="blth" class="form-select" onchange="showLoading(); this.form.submit()">
+                    <option value="">Pilih</option>
+                    {% for blth in blth_list %}
+                        <option value="{{ blth }}" {% if selected_blth == blth|string %}selected{% endif %}>{{ blth }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 🔹 Kelompok -->
+            <div class="col-2">
+                <label class="form-label"><i class="bi bi-tag"></i> KDKelompok</label>
+                <select name="kdkelompok" class="form-select" onchange="showLoading(); this.form.submit()">
+                    <option value="">Semua</option>
+                    {% for i in range(1, 9) %}
+                        <option value="{{ i }}" {% if selected_kelompok == i|string %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
+                    <option value="P" {% if selected_kelompok == 'P' %}selected{% endif %}>P</option>
+                    <option value="A" {% if selected_kelompok == 'A' %}selected{% endif %}>A</option>
+                    <option value="I" {% if selected_kelompok == 'I' %}selected{% endif %}>I</option>
+                </select>
+            </div>
+
+            <!-- ✅ Filter UNITUP hanya muncul untuk UP3 TANPA unitup_filter -->
+            {% if role == 'UP3' and not unitup_filter %}
+            <div class="col-2">
+                <label class="form-label"><i class="bi bi-building"></i> UNITUP</label>
+                <select name="unitup_filter" class="form-select" onchange="showLoading(); this.form.submit()">
+                    <option value="">Semua</option>
+                    {% for ulp in unitup_list %}
+                        <option value="{{ ulp }}">{{ ulp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- 🔹 Jam Nyala - DINAMIS WIDTH -->
+            <div class="col-{% if role == 'UP3' and not unitup_filter %}6{% else %}8{% endif %}">
+                <label class="form-label"><i class="bi bi-clock"></i> Jam Nyala</label>
+                <div class="input-group">
+                    <input type="number" name="jam_nyala_min" class="form-control" 
+                           value="{{ jam_nyala_min }}" placeholder="Min" step="0.1">
+                    <span class="input-group-text">-</span>
+                    <input type="number" name="jam_nyala_max" class="form-control" 
+                           value="{{ jam_nyala_max }}" placeholder="Max" step="0.1">
+                    <button type="submit" class="btn btn-primary" onclick="showLoading()">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= DOWNLOAD HARI BACA ================= -->
+<div class="card shadow-sm mb-4 border-success">
+    <div class="card-body">
+        <h6 class="fw-bold text-success mb-3">
+            <i class="bi bi-download"></i> Download Data Berdasarkan Hari Baca (KDKELOMPOK)
+        </h6>
+        <form id="downloadHbForm" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label for="input1" class="col-form-label">Dari</label>
+            </div>
+            <div class="col-auto">
+                <input type="text" class="form-control form-control-sm" id="input1" placeholder="" maxlength="1" required>
+            </div>
+            <div class="col-auto">
+                <label for="input2" class="col-form-label">Sampai</label>
+            </div>
+            <div class="col-auto">
+                <input type="text" class="form-control form-control-sm" id="input2" placeholder="" maxlength="1" required>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-success btn-sm" id="btnDownloadHb">
+                    <i class="bi bi-file-earmark-excel"></i> Download Hari Baca
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'dlpd_3bln' %}active{% endif %}" data-tab="dlpd_3bln"
+               href="?tab=dlpd_3bln&blth={{ selected_blth }}&kdkelompok={{ selected_kelompok }}&page=1{% if unitup_filter %}&unitup_filter={{ unitup_filter }}{% endif %}"
+               onclick="showLoading()">
+                <i class="bi bi-calendar3"></i> DLPD 3 Bln
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'naik' %}active{% endif %}" data-tab="naik"
+               href="?tab=naik&blth={{ selected_blth }}&kdkelompok={{ selected_kelompok }}&page=1{% if unitup_filter %}&unitup_filter={{ unitup_filter }}{% endif %}"
+               onclick="showLoading()">
+                <i class="bi bi-arrow-up"></i> NAIK
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'turun' %}active{% endif %}" data-tab="turun"
+               href="?tab=turun&blth={{ selected_blth }}&kdkelompok={{ selected_kelompok }}&page=1{% if unitup_filter %}&unitup_filter={{ unitup_filter }}{% endif %}"
+               onclick="showLoading()">
+                <i class="bi bi-arrow-down"></i> TURUN
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'div' %}active{% endif %}" data-tab="div"
+               href="?tab=div&blth={{ selected_blth }}&kdkelompok={{ selected_kelompok }}&page=1{% if unitup_filter %}&unitup_filter={{ unitup_filter }}{% endif %}"
+               onclick="showLoading()">
+                <i class="bi bi-question"></i> DIV/NA
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if active_tab == 'jam_nyala' %}active{% endif %}" data-tab="jam_nyala"
+               href="?tab=jam_nyala&blth={{ selected_blth }}&kdkelompok={{ selected_kelompok }}&page=1&jam_nyala_min={{ jam_nyala_min }}&jam_nyala_max={{ jam_nyala_max }}{% if unitup_filter %}&unitup_filter={{ unitup_filter }}{% endif %}"
+               onclick="showLoading()">
+                <i class="bi bi-clock"></i> Jam Nyala
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <div class="tab-pane fade {% if active_tab == 'dlpd_3bln' %}show active{% endif %}">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="bi bi-bar-chart"></i> DLPD 3 Bulan (↑50%) - Total: {{ total_rows }} Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">{{ dlpd_3bln_html|safe }}</div>
+                    {{ pagination_html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade {% if active_tab == 'naik' %}show active{% endif %}">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="bi bi-arrow-up"></i> Data NAIK - Total: {{ total_rows }} Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">{{ naik_html_v2|safe }}</div>
+                    {{ pagination_html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade {% if active_tab == 'turun' %}show active{% endif %}">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5><i class="bi bi-arrow-down"></i> Data TURUN - Total: {{ total_rows }} Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">{{ turun_html_v2|safe }}</div>
+                    {{ pagination_html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade {% if active_tab == 'div' %}show active{% endif %}">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-question"></i> Data DIV/NA - Total: {{ total_rows }} Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">{{ div_html_v2|safe }}</div>
+                    {{ pagination_html|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade {% if active_tab == 'jam_nyala' %}show active{% endif %}">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="bi bi-clock"></i> Jam Nyala - Total: {{ total_rows }} Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">{{ jam_nyala_html|safe }}</div>
+                    {{ pagination_html|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Grafik -->
+<div class="modal fade" id="grafikModal" tabindex="-1" aria-labelledby="grafikModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="grafikModalLabel">
+                    <i class="bi bi-graph-up"></i> Grafik Pemakaian 6 Bulan
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="grafikLoadingSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Memuat grafik...</p>
+                </div>
+                <div id="grafikContent" style="display: none; height: 400px; position: relative;">
+                    <canvas id="grafikChart"></canvas>
+                </div>
+                <div id="grafikError" class="alert alert-danger" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 🔹 STATUS INDICATOR AUTO-SAVE -->
+    <button id="saveVerifikasiBtn" class="btn btn-success btn-lg">
+        <i class="bi bi-check-circle"></i> Auto-Save Aktif
+    </button>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+
+    
+// =================== GLOBAL VARIABLES ===================
+let saveTimeout;
+let saveQueue = 0;
+
+// =================== UTILITY FUNCTIONS ===================
+function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('show');
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+
+function open3Foto(idpel, blth) {
+    const url = "https://portalapp.iconpln.co.id/acmt/DisplayBlobServlet1?idpel=";
+    const getPrev = b => { 
+        let y = +b.substr(0,4), m = +b.substr(4,2)-1; 
+        if(!m){m=12;y--;} 
+        return y+(m<10?'0'+m:m); 
+    };
+    const b1 = getPrev(blth), b2 = getPrev(b1);
+    [blth, b1, b2].forEach((b,i) => window.open(`${url}${idpel}&blth=${b}`, `_f${i+1}`, `width=300,height=900,left=${10+310*i},top=10`));
+}
+
+// =================== AUTO-SAVE FUNCTIONS ===================
+function autoSaveVerifikasi(idpel, blth, field, value) {
+    console.log('💾 Attempting to save:', {idpel, blth, field, value});
+    
+    if (!idpel || !blth || !field) {
+        console.error('❌ Missing required fields:', {idpel, blth, field});
+        return;
+    }
+    
+    const row = document.querySelector(`tr[data-idpel="${idpel}"][data-blth="${blth}"]`);
+    let unitup = null;
+    
+    if (row) {
+        const cells = row.querySelectorAll('td');
+        if (cells[1]) {
+            unitup = cells[1].textContent.trim();
+        }
+    }
+    
+    console.log('🏢 UNITUP detected:', unitup);
+    
+    saveQueue++;
+    updateSaveStatus(true);
+    
+    fetch('/update_verifikasi_single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            IDPEL: idpel,
+            BLTH: blth,
+            UNITUP: unitup,
+            column: field,
+            value: value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        saveQueue--;
+        if (data.success) {
+            console.log('✅ Auto-saved successfully!');
+            showSaveSuccess();
+        } else {
+            console.error('❌ Save failed:', data.message);
+            alert('❌ Gagal simpan: ' + data.message);
+        }
+        if (saveQueue === 0) {
+            updateSaveStatus(false);
+        }
+    })
+    .catch(error => {
+        saveQueue--;
+        console.error('❌ Network error:', error);
+        alert('❌ Error jaringan: ' + error);
+        if (saveQueue === 0) {
+            updateSaveStatus(false);
+        }
+    });
+}
+
+function updateSaveStatus(saving) {
+    const btn = document.getElementById('saveVerifikasiBtn');
+    if (!btn) return;
+    
+    if (saving) {
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyimpan...';
+        btn.classList.add('show');
+        btn.disabled = true;
+    } else {
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Tersimpan';
+        setTimeout(() => {
+            btn.classList.remove('show');
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+
+function showSaveSuccess() {
+    console.log('✅ Save success feedback shown');
+}
+
+// =================== TABLE SORTING FUNCTIONS ===================
+function makeSortable(table) {
+    const headers = table.querySelectorAll('thead th');
+    const tbody = table.querySelector('tbody');
+    
+    if (!tbody) return;
+    
+    headers.forEach((header, columnIndex) => {
+        const headerText = header.textContent.trim();
+        if (!headerText || headerText === 'AKSI' || headerText === 'FOTO') {
+            return;
+        }
+        
+        header.classList.add('sortable');
+        header.dataset.column = columnIndex;
+        header.dataset.sortType = 'none';
+        
+        header.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            sortTable(table, columnIndex, this);
+        });
+    });
+}
+
+function sortTable(table, columnIndex, header) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    let sortType = header.dataset.sortType || 'none';
+    let newSortType = sortType === 'asc' ? 'desc' : 'asc';
+    
+    table.querySelectorAll('thead th').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc', 'sorted');
+        th.dataset.sortType = 'none';
+    });
+    
+    table.querySelectorAll('td').forEach(td => {
+        td.classList.remove('sorted-column');
+    });
+    
+    header.classList.add(newSortType === 'asc' ? 'sort-asc' : 'sort-desc');
+    header.classList.add('sorted');
+    header.dataset.sortType = newSortType;
+    
+    rows.sort((a, b) => {
+        let aCell = a.cells[columnIndex];
+        let bCell = b.cells[columnIndex];
+        
+        if (!aCell || !bCell) return 0;
+        
+        let aValue = getCellValue(aCell);
+        let bValue = getCellValue(bCell);
+        
+        let aNum = parseFloat(aValue.replace(/,/g, '.'));
+        let bNum = parseFloat(bValue.replace(/,/g, '.'));
+        
+        let result = 0;
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            result = aNum - bNum;
+        } else {
+            result = aValue.localeCompare(bValue, 'id', {numeric: true});
+        }
+        
+        return newSortType === 'asc' ? result : -result;
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+    
+    rows.forEach(row => {
+        if (row.cells[columnIndex]) {
+            row.cells[columnIndex].classList.add('sorted-column');
+        }
+    });
+    
+    updateZebraStriping(tbody);
+}
+
+function getCellValue(cell) {
+    const input = cell.querySelector('input');
+    if (input) return input.value || '';
+    
+    const select = cell.querySelector('select');
+    if (select) return select.value || select.textContent || '';
+    
+    return cell.textContent.trim();
+}
+
+function updateZebraStriping(tbody) {
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((row, index) => {
+        row.classList.remove('even-row');
+        if (index % 2 === 1) {
+            row.classList.add('even-row');
+        }
+    });
+}
+
+// =================== DOWNLOAD FUNCTIONS ===================
+function initDownloadExcel() {
+    const downloadBtn = document.getElementById("downloadExcelBtn");
+    if (!downloadBtn) return;
+    
+    downloadBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        
+        const activeTabLink = document.querySelector(".nav-link.active");
+        if (!activeTabLink) {
+            alert("❌ Pilih tab terlebih dahulu");
+            return;
+        }
+        
+        const tabName = activeTabLink.dataset.tab || activeTabLink.getAttribute('data-tab');
+        if (!tabName) {
+            alert("❌ Tab tidak ditemukan");
+            return;
+        }
+        
+        const currentParams = new URLSearchParams(window.location.search);
+        const downloadUrl = new URL(window.location.origin + "/download_excel");
+        downloadUrl.searchParams.set("tab", tabName);
+        
+        const filterParams = ["blth", "kdkelompok", "unitup_filter", "jam_nyala_min", "jam_nyala_max"];
+        filterParams.forEach(param => {
+            const value = currentParams.get(param);
+            if (value) {
+                downloadUrl.searchParams.set(param, value);
+            }
+        });
+        
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i> Downloading...';
+        this.disabled = true;
+        
+        window.location.href = downloadUrl.toString();
+        
+        setTimeout(() => {
+            this.innerHTML = '<i class="bi bi-file-earmark-excel"></i> Download Data';
+            this.disabled = false;
+        }, 3000);
+    });
+}
+
+function initDownloadHariBaca() {
+    const btnDownloadHb = document.getElementById('btnDownloadHb');
+    if (!btnDownloadHb) return;
+    
+    btnDownloadHb.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const activeTabLink = document.querySelector('.nav-link.active');
+        if (!activeTabLink) {
+            alert('❌ Pilih tab terlebih dahulu');
+            return;
+        }
+        
+        const activeTab = activeTabLink.dataset.tab || activeTabLink.getAttribute('data-tab');
+        const mainBlthSelect = document.getElementById('blth');
+        const input1Field = document.getElementById('input1');
+        const input2Field = document.getElementById('input2');
+        
+        if (!mainBlthSelect || !input1Field || !input2Field) {
+            alert('❌ Form fields tidak ditemukan');
+            return;
+        }
+        
+        const blth = mainBlthSelect.value.trim();
+        const input1 = input1Field.value.trim().toUpperCase();
+        const input2 = input2Field.value.trim().toUpperCase();
+        
+        if (!blth) {
+            alert('⚠️ Pilih periode (BLTH) terlebih dahulu!');
+            mainBlthSelect.focus();
+            return;
+        }
+        
+        if (!input1 || !input2) {
+            alert('⚠️ Isi range kelompok (Dari - Sampai)!');
+            return;
+        }
+        
+        const validChars = ['1', '2', '3', '4', '5', '6', '7', '8', 'P', 'A', 'I'];
+        if (!validChars.includes(input1) || !validChars.includes(input2)) {
+            alert('⚠️ Input harus: 1-8, P, A, atau I');
+            return;
+        }
+        
+        const url = new URL(window.location.origin + "/download_excel_hb");
+        url.searchParams.set('tab', activeTab);
+        url.searchParams.set('blth', blth);
+        url.searchParams.set('input1', input1);
+        url.searchParams.set('input2', input2);
+        
+        // Ambil UNITUP filter jika ada
+        const unitupSelect = document.querySelector('select[name="unitup_filter"]');
+        if (unitupSelect && unitupSelect.value) {
+            url.searchParams.set('unitup_filter', unitupSelect.value);
+        }
+        
+        const originalHTML = this.innerHTML;
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i> Downloading...';
+        this.disabled = true;
+        
+        window.location.href = url.toString();
+        
+        setTimeout(() => {
+            this.innerHTML = originalHTML;
+            this.disabled = false;
+        }, 3000);
+    });
+}
+
+// =================== TRANSFORM CELLS TO INPUT ===================
+function transformCellsToInputs() {
+    document.querySelectorAll("table tbody tr").forEach((row) => {
+        const cells = row.cells;
+        
+        const blth = cells[0]?.textContent.trim() || '';
+        const idpel = cells[2]?.textContent.trim() || '';
+        
+        row.dataset.idpel = idpel;
+        row.dataset.blth = blth;
+        
+        const table = row.closest('table');
+        if (!table) return;
+        
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const hasilIdx = headers.indexOf('HASIL_PEMERIKSAAN');
+        const stanIdx = headers.indexOf('STAN_VERIFIKASI');
+        const tindakIdx = headers.indexOf('TINDAK_LANJUT');
+        
+        // HASIL_PEMERIKSAAN
+        if (hasilIdx >= 0 && cells[hasilIdx]) {
+            const existingSelect = cells[hasilIdx].querySelector('select');
+            let current = '';
+            
+            if (existingSelect) {
+                current = existingSelect.value || '';
+            } else {
+                const val = cells[hasilIdx].textContent.trim();
+                current = (val === 'NULL' || val === '-- Pilih --' || !val) ? '' : val;
+            }
+            
+            const hasilOptions = [
+                '', 'SESUAI', 'TEMPER NYALA', 'SALAH STAN', 'SALAH FOTO', 
+                'FOTO BURAM', 'ANOMALI PDL', 'LEBIH TAGIH', 'KURANG TAGIH', 
+                'BKN FOTO KWH', 'BENCANA', '3BLN TANPA STAN', 'BACA ULANG', 'MASUK 720JN'
+            ];
+            
+            let html = '<select class="verifikasi-select" data-field="HASIL_PEMERIKSAAN">';
+            hasilOptions.forEach(opt => {
+                const selected = opt === current ? 'selected' : '';
+                const display = opt === '' ? '-- Pilih --' : opt;
+                html += `<option value="${opt}" ${selected}>${display}</option>`;
+            });
+            html += '</select>';
+            
+            cells[hasilIdx].innerHTML = html;
+        }
+        
+        // STAN_VERIFIKASI
+        if (stanIdx >= 0 && cells[stanIdx]) {
+            const existingInput = cells[stanIdx].querySelector('input');
+            let current = '';
+            
+            if (existingInput) {
+                current = existingInput.value || '';
+            } else {
+                const val = cells[stanIdx].textContent.trim();
+                current = (val === 'NULL' || !val) ? '' : val;
+            }
+            
+            cells[stanIdx].innerHTML = `<input type="number" class="verifikasi-input" data-field="STAN_VERIFIKASI" value="${current}" placeholder="Stan">`;
+        }
+        
+        // TINDAK_LANJUT
+        if (tindakIdx >= 0 && cells[tindakIdx]) {
+            const existingInput = cells[tindakIdx].querySelector('input');
+            let current = '';
+            
+            if (existingInput) {
+                current = existingInput.value || '';
+            } else {
+                const val = cells[tindakIdx].textContent.trim();
+                current = (val === 'NULL' || !val) ? '' : val;
+            }
+            
+            cells[tindakIdx].innerHTML = `<input type="text" class="verifikasi-input" data-field="TINDAK_LANJUT" value="${current}" placeholder="Tindak lanjut...">`;
+        }
+    });
+}
+
+// =================== MAIN INITIALIZATION ===================
+window.addEventListener('load', hideLoading);
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing application...');
+    
+    // 1. Auto-select latest BLTH
+    const blthSelect = document.getElementById("blth");
+    if (blthSelect && !blthSelect.value && blthSelect.options.length > 1) {
+        blthSelect.selectedIndex = 1;
+    }
+    
+    // 2. Clean \n from existing elements
+    document.querySelectorAll('textarea, .form-control').forEach(elem => {
+        if (elem.value && elem.value.includes('\\n')) {
+            elem.value = elem.value.replace(/\\n/g, ' ').trim();
+        }
+    });
+
+    document.querySelectorAll('select option').forEach(option => {
+        if (option.textContent.includes('\\n')) {
+            option.textContent = option.textContent.replace(/\\n/g, ' ').trim();
+        }
+    });
+
+    document.querySelectorAll('td, th, div, span').forEach(elem => {
+        if (elem.innerHTML.includes('\\n')) {
+            elem.innerHTML = elem.innerHTML.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+    });
+    
+    // 3. Transform cells to inputs
+    transformCellsToInputs();
+    
+
+// Tambahkan fungsi ini di dalam document.addEventListener('DOMContentLoaded')
+function hideFoto3BlnColumn() {
+    console.log('🔍 Hiding FOTO_3BLN column...');
+    
+    document.querySelectorAll('table').forEach(table => {
+        const headers = table.querySelectorAll('thead th');
+        let columnIndex = -1;
+        
+        // Cari kolom FOTO_3BLN
+        headers.forEach((th, index) => {
+            const text = th.textContent.trim().toUpperCase();
+            if (text === 'FOTO_3BLN' || text.includes('FOTO_3BLN')) {
+                columnIndex = index;
+                th.style.display = 'none';
+            }
+        });
+        
+        // Sembunyikan semua cell di kolom tersebut
+        if (columnIndex >= 0) {
+            table.querySelectorAll('tbody tr').forEach(row => {
+                if (row.cells[columnIndex]) {
+                    row.cells[columnIndex].style.display = 'none';
+                }
+            });
+        }
+    });
+}
+
+// Panggil fungsi
+hideFoto3BlnColumn();
+    
+
+
+    // 4. SAHLWBP coloring
+    document.querySelectorAll("table").forEach(t => {
+        const headers = Array.from(t.querySelectorAll("thead th"));
+        const idx = headers.findIndex(h => h.innerText.trim().toUpperCase() === "SAHLWBP");
+        
+        if (idx !== -1) {
+            headers[idx].classList.add("sahlwbp-header");
+            t.querySelectorAll("tbody tr").forEach(r => {
+                const c = r.cells[idx];
+                if (c) {
+                    const value = parseFloat(c.innerText.replace(',','.'));
+                    c.classList.add(value > 0 ? "sahlwbp-cell-blue-positive" : "sahlwbp-cell-blue");
+                }
+            });
+        }
+    });
+    
+    // 5. Initialize table sorting
+    const tables = document.querySelectorAll('.table-responsive table');
+    tables.forEach(table => makeSortable(table));
+    
+    // 6. Initialize downloads
+    initDownloadExcel();
+    initDownloadHariBaca();
+    
+    // 7. Highlight row on click
+    document.querySelectorAll(".table-responsive table").forEach(table => {
+        table.addEventListener("click", function (event) {
+            const row = event.target.closest("tr");
+            if (!row) return;
+            table.querySelectorAll("tr.active-row").forEach(r => r.classList.remove("active-row"));
+            row.classList.add("active-row");
+        });
+    });
+    
+    console.log('✅ Application initialized successfully!');
+});
+
+// =================== EVENT DELEGATION ===================
+// Auto-save on change (HASIL_PEMERIKSAAN)
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('verifikasi-select')) {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        
+        const idpel = row.dataset.idpel;
+        const blth = row.dataset.blth;
+        const field = e.target.dataset.field;
+        const value = e.target.value;
+        
+        row.classList.add('has-changes');
+        autoSaveVerifikasi(idpel, blth, field, value);
+    }
+});
+
+// Auto-save on input (TINDAK_LANJUT) - debounced
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('verifikasi-input') && e.target.dataset.field === 'TINDAK_LANJUT') {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        
+        const idpel = row.dataset.idpel;
+        const blth = row.dataset.blth;
+        const field = e.target.dataset.field;
+        const value = e.target.value;
+        
+        row.classList.add('has-changes');
+        
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            autoSaveVerifikasi(idpel, blth, field, value);
+        }, 1000);
+    }
+});
+
+// Auto-save on blur (STAN_VERIFIKASI)
+document.addEventListener('blur', function(e) {
+    if (e.target.classList.contains('verifikasi-input') && e.target.dataset.field === 'STAN_VERIFIKASI') {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        
+        const idpel = row.dataset.idpel;
+        const blth = row.dataset.blth;
+        const field = e.target.dataset.field;
+        const value = e.target.value;
+        
+        row.classList.add('has-changes');
+        autoSaveVerifikasi(idpel, blth, field, value);
+    }
+}, true);
+
+
+/// ================================================================
+// HANDLER: Grafik Button - RADICAL FIX (NO BACKDROP)
+// ================================================================
+$(document).on('click', '.grafik-btn', function(e) {
+    e.preventDefault();
+    
+    const idpel = $(this).data('idpel');
+    const blth = $(this).data('blth');
+    const unitup = $(this).data('unitup') || '';
+    
+    console.log('📊 Grafik clicked:', { idpel, blth, unitup });
+    
+    if (!idpel || !blth) {
+        alert('⚠️ Data IDPEL atau BLTH tidak lengkap');
+        return;
+    }
+    
+    // Reset modal
+    $('#grafikLoadingSpinner').show();
+    $('#grafikContent').hide();
+    $('#grafikError').hide();
+    $('#grafikModalLabel').html(`<i class="bi bi-graph-up"></i> Grafik Pemakaian 6 Bulan - IDPEL: ${idpel}`);
+    
+    // Destroy chart lama
+    if (window.grafikChartInstance) {
+        window.grafikChartInstance.destroy();
+        window.grafikChartInstance = null;
+    }
+    
+    // ✅ RADICAL FIX: Gunakan modal TANPA backdrop Bootstrap
+    const modalEl = document.getElementById('grafikModal');
+    const sidebar = document.querySelector('.sidebar');
+    
+    // Disable sidebar
+    if (sidebar) {
+        sidebar.style.pointerEvents = 'none';
+        sidebar.style.opacity = '0.5';
+    }
+    
+    // Show modal WITHOUT Bootstrap backdrop
+    modalEl.style.display = 'block';
+    modalEl.classList.add('show');
+    modalEl.style.zIndex = '9999';
+    modalEl.style.position = 'fixed';
+    modalEl.style.top = '0';
+    modalEl.style.left = '0';
+    modalEl.style.width = '100%';
+    modalEl.style.height = '100%';
+    modalEl.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    
+    // Force clickable
+    const dialog = modalEl.querySelector('.modal-dialog');
+    const content = modalEl.querySelector('.modal-content');
+    
+    if (dialog) {
+        dialog.style.pointerEvents = 'auto';
+        dialog.style.zIndex = '10000';
+        dialog.style.position = 'relative';
+        dialog.style.margin = '30px auto';
+    }
+    
+    if (content) {
+        content.style.pointerEvents = 'auto';
+        content.style.zIndex = '10001';
+        content.style.backgroundColor = 'white';
+    }
+    
+    // Add body class
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    
+    console.log('✅ Modal displayed without backdrop');
+    
+    // Fetch data
+    const fetchTimeout = setTimeout(() => {
+        $('#grafikLoadingSpinner').hide();
+        $('#grafikError').show().html('<strong>Timeout:</strong> Request terlalu lama.');
+    }, 15000);
+    
+    $.ajax({
+        url: `/api/grafik/${idpel}`,
+        method: 'GET',
+        data: { blth: blth, ulp: unitup },
+        timeout: 15000,
+        success: function(response) {
+            clearTimeout(fetchTimeout);
+            
+            if (!response.labels || !response.lwbppakai || !response.jam_nyala) {
+                $('#grafikLoadingSpinner').hide();
+                $('#grafikError').show().html('<strong>Error:</strong> Data tidak lengkap');
+                return;
+            }
+            
+            $('#grafikLoadingSpinner').hide();
+            $('#grafikContent').show();
+            
+            $('#grafikModalLabel').html(
+                `<i class="bi bi-graph-up"></i> Grafik Pemakaian - IDPEL: ${idpel} 
+                ${response.unitup && response.unitup !== 'ALL' ? `(${response.unitup})` : ''}`
+            );
+            
+            const ctx = document.getElementById('grafikChart').getContext('2d');
+            window.grafikChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: response.labels,
+                    datasets: [
+                        { label: 'KWH Pemakaian', data: response.lwbppakai, borderColor: 'rgb(75, 192, 192)', 
+                          backgroundColor: 'rgba(75, 192, 192, 0.2)', tension: 0.3, yAxisID: 'y' },
+                        { label: 'Jam Nyala', data: response.jam_nyala, borderColor: 'rgb(255, 159, 64)', 
+                          backgroundColor: 'rgba(255, 159, 64, 0.2)', tension: 0.3, yAxisID: 'y1' },
+                        { label: 'Delta KWH', data: response.delta, borderColor: 'rgb(153, 102, 255)', 
+                          backgroundColor: 'rgba(153, 102, 255, 0.2)', tension: 0.3, yAxisID: 'y' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: { display: true, text: `Daya: ${response.daya ? response.daya[response.daya.length-1] : 'N/A'} VA` }
+                    },
+                    scales: {
+                        y: { type: 'linear', position: 'left', title: { display: true, text: 'KWH' } },
+                        y1: { type: 'linear', position: 'right', title: { display: true, text: 'Jam Nyala' }, 
+                              grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        },
+        error: function() {
+            clearTimeout(fetchTimeout);
+            $('#grafikLoadingSpinner').hide();
+            $('#grafikError').show().html('<strong>Gagal memuat grafik</strong>');
+        }
+    });
+});
+
+// ✅ Close modal handler
+$(document).on('click', '#grafikModal .btn-close', function(e) {
+    e.preventDefault();
+    closeGrafikModal();
+});
+
+// Close when clicking backdrop (outside modal content)
+$(document).on('click', '#grafikModal', function(e) {
+    if (e.target.id === 'grafikModal') {
+        closeGrafikModal();
+    }
+});
+
+// Prevent closing when clicking inside modal content
+$(document).on('click', '#grafikModal .modal-dialog', function(e) {
+    e.stopPropagation();
+});
+
+// Function to close modal
+function closeGrafikModal() {
+    const modalEl = document.getElementById('grafikModal');
+    const sidebar = document.querySelector('.sidebar');
+    
+    // Hide modal
+    modalEl.style.display = 'none';
+    modalEl.classList.remove('show');
+    modalEl.style.backgroundColor = '';
+    
+    // Re-enable sidebar
+    if (sidebar) {
+        sidebar.style.pointerEvents = 'auto';
+        sidebar.style.opacity = '1';
+    }
+    
+    // Remove body class
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    
+    // Cleanup
+    if (window.grafikChartInstance) {
+        window.grafikChartInstance.destroy();
+        window.grafikChartInstance = null;
+    }
+    
+    $('#grafikLoadingSpinner').hide();
+    $('#grafikContent').hide();
+    $('#grafikError').hide();
+    
+    console.log('✅ Modal closed');
+}
+
+// // Cleanup saat modal ditutup
+// $('#grafikModal').on('hidden.bs.modal', function() {
+//     if (window.grafikChartInstance) {
+//         window.grafikChartInstance.destroy();
+//         window.grafikChartInstance = null;
+//     }
+    
+//     // Reset semua view
+//     $('#grafikLoadingSpinner').hide();
+//     $('#grafikContent').hide();
+//     $('#grafikError').hide();
+// ✅ Event handlers untuk modal z-index
+// $('#grafikModal').on('show.bs.modal', function() {
+//     const modalEl = $(this)[0];
+//     const backdrop = $('.modal-backdrop');
+//     const sidebar = $('.sidebar');
+    
+//     modalEl.style.zIndex = '1055';
+//     backdrop.css('z-index', '1050');
+//     sidebar.css('z-index', '100').css('pointer-events', 'none');
+// });
+
+// $('#grafikModal').on('shown.bs.modal', function() {
+//     const modalEl = $(this)[0];
+//     const backdrop = $('.modal-backdrop');
+    
+//     modalEl.style.zIndex = '1055';
+//     backdrop.css('z-index', '1050');
+//     $(this).find('.modal-dialog').css({
+//         'pointer-events': 'auto',
+//         'z-index': '1056'
+//     });
+// });
+
+// // Cleanup saat modal ditutup
+// $('#grafikModal').on('hidden.bs.modal', function() {
+//     if (window.grafikChartInstance) {
+//         window.grafikChartInstance.destroy();
+//         window.grafikChartInstance = null;
+//     }
+    
+//     // Reset semua view
+//     $('#grafikLoadingSpinner').hide();
+//     $('#grafikContent').hide();
+//     $('#grafikError').hide();
+    
+//     // ✅ Re-enable sidebar
+//     $('.sidebar').css('pointer-events', 'auto');
+// });
+
+
+
+
+</script>
+{% endblock %}
