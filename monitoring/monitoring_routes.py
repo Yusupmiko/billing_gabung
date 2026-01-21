@@ -543,36 +543,31 @@ def update_hasil_pemeriksaan():
     from .monitoring_service import MonitoringService
     
     try:
-        # Get JSON data
         data = request.get_json()
-        
-        if not data:
-            return jsonify({"status": "error", "message": "No data provided"}), 400
         
         table = data.get('table')
         updates = data.get('updates', [])
+        selected_blth = data.get('blth')      # ✅ AMBIL DARI PAYLOAD
+        selected_unitup = data.get('unitup')  # ✅ AMBIL DARI PAYLOAD
         username = session.get('username', '')
         
         print(f"[UPDATE] User: {username}")
         print(f"[UPDATE] Table: {table}")
+        print(f"[UPDATE] BLTH from payload: {selected_blth}")  # ✅ DEBUG
+        print(f"[UPDATE] UNITUP from payload: {selected_unitup}")
         print(f"[UPDATE] Updates count: {len(updates)}")
         
-        if not table:
-            return jsonify({"status": "error", "message": "Table parameter required"}), 400
+        # Validasi
+        if not table or not updates:
+            return jsonify({"status": "error", "message": "Invalid parameters"}), 400
         
-        if not updates:
-            return jsonify({"status": "error", "message": "No updates provided"}), 400
+        if not selected_blth:
+            return jsonify({"status": "error", "message": "BLTH required"}), 400
         
-        # Remove _marking suffix if present
         base_table = table.replace('_marking', '')
         
-        # Validate table access
         if not validate_table_access(username, base_table):
-            return jsonify({"status": "error", "message": "Akses ditolak"}), 403
-        
-        # Get filters from request or session
-        selected_unitup = request.args.get('unitup') or request.json.get('unitup')
-        selected_blth = request.args.get('blth') or request.json.get('blth')
+            return jsonify({"status": "error", "message": "Access denied"}), 403
         
         # Get UNITUP filter
         unitup_filter = get_user_unitup_filter(username, selected_unitup)
@@ -580,24 +575,21 @@ def update_hasil_pemeriksaan():
         print(f"[UPDATE] UNITUP filter: {unitup_filter}")
         print(f"[UPDATE] BLTH filter: {selected_blth}")
         
-        # Create monitoring service with filters
+        # ✅ Create service with BOTH filters
         monitoring = MonitoringService(get_db_connection2, unitup_filter, selected_blth)
         
         # Perform update
         result = monitoring.update_hasil_pemeriksaan(base_table, updates)
         
-        if result['status'] == 'error':
-            print(f"[UPDATE ERROR] {result['message']}")
-            return jsonify(result), 500
-        
-        print(f"[UPDATE SUCCESS] {result['message']}")
+        print(f"[UPDATE] Result: {result}")
         return jsonify(result)
     
     except Exception as e:
         print(f"[UPDATE EXCEPTION] {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({"status": "error", "message": f"Internal error: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 

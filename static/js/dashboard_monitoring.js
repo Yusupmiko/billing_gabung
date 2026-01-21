@@ -896,28 +896,172 @@ function renderModalTable(data, type) {
 // ================================================================
 // SAVE CHANGES: KIRIM HANYA DATA YANG BERUBAH
 // ================================================================
+// $("#saveChangesBtn").on("click", function () {
+//   const btn = $(this);
+//   let updates = [];
+//   let tableName = $("#detailModal").attr("data-table");
+  
+//   let blth = $("#detailModal").attr("data-blth");
+//   let unitup = $("#detailModal").attr("data-unitup");
+
+//   // ✅ FALLBACK 1: Ambil dari URL
+//   if (!unitup || unitup.trim() === "") {
+//     const urlParams = new URLSearchParams(window.location.search);
+//     unitup = urlParams.get('unitup') || '';
+//     console.log("⚠️ Using UNITUP from URL:", unitup);
+//   }
+
+//   // ✅ FALLBACK 2: Ambil dari row pertama
+//   if (!unitup || unitup.trim() === "") {
+//     const firstRow = $("#detailTableBody tr:first");
+//     if (firstRow.length) {
+//       unitup = firstRow.find("td").eq(1).text().trim();
+//       console.log("⚠️ Using UNITUP from table:", unitup);
+//     }
+//   }
+
+//   console.log("🔄 Checking for changes...");
+//   console.log("📋 Table:", tableName);
+//   console.log("📅 BLTH:", blth);
+//   console.log("🏢 UNITUP:", unitup);
+
+//   // ✅ VALIDASI
+//   if (!blth || blth.trim() === "") {
+//     alert("⚠️ BLTH tidak ditemukan! Silakan buka ulang modal.");
+//     return;
+//   }
+
+//   if (!unitup || unitup.trim() === "") {
+//     alert("⚠️ UNITUP tidak ditemukan! Silakan buka ulang modal.");
+//     return;
+//   }
+
+//   // ✅ LOOP: Cari hanya row yang BERUBAH
+//   $("#detailTableBody tr").each(function () {
+//     let row = $(this);
+//     let idpel = row.data("idpel");
+    
+//     if (!idpel) {
+//       console.warn("⚠️ No IDPEL found for row, skipping");
+//       return;
+//     }
+
+//     // Cek HASIL_PEMERIKSAAN
+//     const hasilSelect = row.find(`select[name="hasil_${idpel}"]`);
+//     const hasilOriginal = hasilSelect.data("original") || "";
+//     const hasilCurrent = hasilSelect.val() || "";
+//     const hasilChanged = hasilOriginal !== hasilCurrent;
+
+//     // Cek TINDAK_LANJUT
+//     const tindakTextarea = row.find(`textarea[name="tindak_${idpel}"]`);
+//     const tindakOriginal = tindakTextarea.data("original") || "";
+//     const tindakCurrent = tindakTextarea.val() || "";
+//     const tindakChanged = tindakOriginal !== tindakCurrent;
+
+//     // Cek STAN_VERIFIKASI
+//     const stanInput = row.find(`input.stan-verifikasi-input[data-idpel="${idpel}"]`);
+//     const stanOriginal = stanInput.data("original") || "";
+//     const stanCurrent = stanInput.val() || "";
+//     const stanChanged = stanOriginal !== stanCurrent;
+
+//     // ✅ HANYA TAMBAHKAN JIKA ADA PERUBAHAN
+//     if (hasilChanged || tindakChanged || stanChanged) {
+//       console.log(`✏️ CHANGED: IDPEL ${idpel}`, {
+//         hasil: hasilChanged ? `"${hasilOriginal}" → "${hasilCurrent}"` : "no change",
+//         tindak: tindakChanged ? `"${tindakOriginal}" → "${tindakCurrent}"` : "no change",
+//         stan: stanChanged ? `"${stanOriginal}" → "${stanCurrent}"` : "no change"
+//       });
+
+//       updates.push({
+//         IDPEL: idpel,
+//         BLTH: blth,
+//         UNITUP: unitup,
+//         HASIL: hasilCurrent,
+//         TINDAK: tindakCurrent,
+//         STAN: stanCurrent
+//       });
+//     }
+//   });
+
+//   console.log(`📊 Total changes detected: ${updates.length} out of ${$("#detailTableBody tr").length} rows`);
+
+//   if (updates.length === 0) {
+//     alert("ℹ️ Tidak ada perubahan untuk disimpan");
+//     return;
+//   }
+
+//   btn
+//     .prop("disabled", true)
+//     .html(
+//       '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...'
+//     );
+
+//   const requestData = {
+//     table: tableName,
+//     updates: updates
+//   };
+
+//   console.log("🚀 Sending request:", requestData);
+
+//   $.ajax({
+//     url: "/monitoring/update_hasil_pemeriksaan",
+//     method: "POST",
+//     contentType: "application/json",
+//     data: JSON.stringify(requestData),
+//     success: function (response) {
+//       console.log("✅ Save successful:", response);
+//       alert(`✅ ${response.message || `Berhasil menyimpan ${updates.length} perubahan!`}`);
+//       location.reload();
+//     },
+//     error: function (xhr, status, error) {
+//       console.error("❌ Save failed:", {
+//         status: xhr.status,
+//         statusText: xhr.statusText,
+//         response: xhr.responseText,
+//         error: error
+//       });
+      
+//       let errorMsg = "Gagal menyimpan data.";
+//       if (xhr.responseJSON && xhr.responseJSON.message) {
+//         errorMsg = xhr.responseJSON.message;
+//       } else if (xhr.responseText) {
+//         try {
+//           const errData = JSON.parse(xhr.responseText);
+//           errorMsg = errData.message || errorMsg;
+//         } catch (e) {
+//           errorMsg = xhr.responseText.substring(0, 100);
+//         }
+//       }
+      
+//       alert(`❌ ${errorMsg}`);
+//       btn.prop("disabled", false).html("Simpan Perubahan");
+//     },
+//   });
+// });
+
+// ================================================================
+// SAVE CHANGES: FIXED VERSION - KIRIM BLTH KE BACKEND
+// ================================================================
 $("#saveChangesBtn").on("click", function () {
   const btn = $(this);
   let updates = [];
   let tableName = $("#detailModal").attr("data-table");
   
+  // ✅ AMBIL BLTH DAN UNITUP DARI MODAL ATTRIBUTES
   let blth = $("#detailModal").attr("data-blth");
   let unitup = $("#detailModal").attr("data-unitup");
 
-  // ✅ FALLBACK 1: Ambil dari URL
+  // ✅ FALLBACK: Ambil dari URL
+  if (!blth || blth.trim() === "") {
+    const urlParams = new URLSearchParams(window.location.search);
+    blth = urlParams.get('blth') || '';
+    console.log("⚠️ Using BLTH from URL:", blth);
+  }
+
   if (!unitup || unitup.trim() === "") {
     const urlParams = new URLSearchParams(window.location.search);
     unitup = urlParams.get('unitup') || '';
     console.log("⚠️ Using UNITUP from URL:", unitup);
-  }
-
-  // ✅ FALLBACK 2: Ambil dari row pertama
-  if (!unitup || unitup.trim() === "") {
-    const firstRow = $("#detailTableBody tr:first");
-    if (firstRow.length) {
-      unitup = firstRow.find("td").eq(1).text().trim();
-      console.log("⚠️ Using UNITUP from table:", unitup);
-    }
   }
 
   console.log("🔄 Checking for changes...");
@@ -928,11 +1072,6 @@ $("#saveChangesBtn").on("click", function () {
   // ✅ VALIDASI
   if (!blth || blth.trim() === "") {
     alert("⚠️ BLTH tidak ditemukan! Silakan buka ulang modal.");
-    return;
-  }
-
-  if (!unitup || unitup.trim() === "") {
-    alert("⚠️ UNITUP tidak ditemukan! Silakan buka ulang modal.");
     return;
   }
 
@@ -974,8 +1113,6 @@ $("#saveChangesBtn").on("click", function () {
 
       updates.push({
         IDPEL: idpel,
-        BLTH: blth,
-        UNITUP: unitup,
         HASIL: hasilCurrent,
         TINDAK: tindakCurrent,
         STAN: stanCurrent
@@ -983,7 +1120,7 @@ $("#saveChangesBtn").on("click", function () {
     }
   });
 
-  console.log(`📊 Total changes detected: ${updates.length} out of ${$("#detailTableBody tr").length} rows`);
+  console.log(`📊 Total changes detected: ${updates.length}`);
 
   if (updates.length === 0) {
     alert("ℹ️ Tidak ada perubahan untuk disimpan");
@@ -993,12 +1130,15 @@ $("#saveChangesBtn").on("click", function () {
   btn
     .prop("disabled", true)
     .html(
-      '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...'
+      '<span class="spinner-border spinner-border-sm"></span> Menyimpan...'
     );
 
+  // ✅ CRITICAL: KIRIM BLTH DAN UNITUP KE BACKEND!
   const requestData = {
     table: tableName,
-    updates: updates
+    updates: updates,
+    blth: blth,        // ✅ TAMBAHKAN INI!
+    unitup: unitup     // ✅ TAMBAHKAN INI!
   };
 
   console.log("🚀 Sending request:", requestData);
@@ -1010,32 +1150,20 @@ $("#saveChangesBtn").on("click", function () {
     data: JSON.stringify(requestData),
     success: function (response) {
       console.log("✅ Save successful:", response);
-      alert(`✅ ${response.message || `Berhasil menyimpan ${updates.length} perubahan!`}`);
+      alert(`✅ ${response.message}`);
       location.reload();
     },
-    error: function (xhr, status, error) {
-      console.error("❌ Save failed:", {
-        status: xhr.status,
-        statusText: xhr.statusText,
-        response: xhr.responseText,
-        error: error
-      });
+    error: function (xhr) {
+      console.error("❌ Save failed:", xhr.responseText);
       
       let errorMsg = "Gagal menyimpan data.";
-      if (xhr.responseJSON && xhr.responseJSON.message) {
+      if (xhr.responseJSON?.message) {
         errorMsg = xhr.responseJSON.message;
-      } else if (xhr.responseText) {
-        try {
-          const errData = JSON.parse(xhr.responseText);
-          errorMsg = errData.message || errorMsg;
-        } catch (e) {
-          errorMsg = xhr.responseText.substring(0, 100);
-        }
       }
       
       alert(`❌ ${errorMsg}`);
       btn.prop("disabled", false).html("Simpan Perubahan");
-    },
+    }
   });
 });
 

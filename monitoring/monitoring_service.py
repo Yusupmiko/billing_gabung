@@ -753,6 +753,80 @@ class MonitoringService:
     # ==================== UPDATE FUNCTIONS ====================
     
         
+    # def update_hasil_pemeriksaan(self, table, updates):
+    #     """
+    #     Update hasil pemeriksaan for multiple records
+    #     Args:
+    #         table: Table name
+    #         updates: List of dict with keys: IDPEL, HASIL, TINDAK, STAN
+    #     Returns:
+    #         Dict with status and message
+    #     """
+    #     conn = self.get_db_connection()
+    #     cursor = conn.cursor()
+        
+    #     try:
+    #         success_count = 0
+            
+    #         for row in updates:
+    #             # Validate required fields
+    #             if 'IDPEL' not in row:
+    #                 print(f"[UPDATE SKIP] Missing IDPEL in row: {row}")
+    #                 continue
+                
+    #             idpel = row.get('IDPEL')
+    #             hasil = row.get('HASIL', row.get('HASIL_PEMERIKSAAN', ''))
+    #             tindak = row.get('TINDAK', row.get('TINDAK_LANJUT', ''))
+    #             stan = row.get('STAN', row.get('STAN_VERIFIKASI', ''))
+                
+    #             print(f"[UPDATE] Processing IDPEL: {idpel}")
+    #             print(f"[UPDATE] HASIL: {hasil}, TINDAK: {tindak}, STAN: {stan}")
+                
+    #             update_query = f"""
+    #                 UPDATE {table}
+    #                 SET HASIL_PEMERIKSAAN = %s,
+    #                     TINDAK_LANJUT = %s,
+    #                     STAN_VERIFIKASI = %s
+    #                 WHERE IDPEL = %s
+    #             """
+    #             update_params = [hasil, tindak, stan, idpel]
+                
+    #             # Add UNITUP filter for security
+    #             if self.unitup_filter:
+    #                 update_query += " AND UNITUP = %s"
+    #                 update_params.append(self.unitup_filter)
+    #                 print(f"[UPDATE] Adding UNITUP filter: {self.unitup_filter}")
+                
+    #             # Add BLTH filter for security
+    #             if self.blth_filter:
+    #                 update_query += " AND BLTH = %s"
+    #                 update_params.append(self.blth_filter)
+    #                 print(f"[UPDATE] Adding BLTH filter: {self.blth_filter}")
+                
+    #             print(f"[UPDATE] Query: {update_query}")
+    #             print(f"[UPDATE] Params: {update_params}")
+                
+    #             cursor.execute(update_query, update_params)
+    #             rows_affected = cursor.rowcount
+    #             print(f"[UPDATE] Rows affected: {rows_affected}")
+                
+    #             success_count += rows_affected
+            
+    #         conn.commit()
+    #         print(f"[UPDATE] Total rows updated: {success_count}")
+    #         return {"status": "success", "message": f"Berhasil update {success_count} data"}
+        
+    #     except Exception as e:
+    #         conn.rollback()
+    #         print(f"[UPDATE ERROR] {str(e)}")
+    #         import traceback
+    #         traceback.print_exc()
+    #         return {"status": "error", "message": str(e)}
+    #     finally:
+    #         cursor.close()
+    #         conn.close()
+ 
+
     def update_hasil_pemeriksaan(self, table, updates):
         """
         Update hasil pemeriksaan for multiple records
@@ -782,6 +856,7 @@ class MonitoringService:
                 print(f"[UPDATE] Processing IDPEL: {idpel}")
                 print(f"[UPDATE] HASIL: {hasil}, TINDAK: {tindak}, STAN: {stan}")
                 
+                # ✅ BUILD QUERY MANUALLY untuk menghindari duplikasi filter
                 update_query = f"""
                     UPDATE {table}
                     SET HASIL_PEMERIKSAAN = %s,
@@ -791,13 +866,13 @@ class MonitoringService:
                 """
                 update_params = [hasil, tindak, stan, idpel]
                 
-                # Add UNITUP filter for security
+                # ✅ Add UNITUP filter for security (manual, jangan pakai _add_filters)
                 if self.unitup_filter:
                     update_query += " AND UNITUP = %s"
                     update_params.append(self.unitup_filter)
                     print(f"[UPDATE] Adding UNITUP filter: {self.unitup_filter}")
                 
-                # Add BLTH filter for security
+                # ✅ CRITICAL: Add BLTH filter untuk HANYA update data di periode yang dipilih
                 if self.blth_filter:
                     update_query += " AND BLTH = %s"
                     update_params.append(self.blth_filter)
@@ -809,6 +884,13 @@ class MonitoringService:
                 cursor.execute(update_query, update_params)
                 rows_affected = cursor.rowcount
                 print(f"[UPDATE] Rows affected: {rows_affected}")
+                
+                if rows_affected == 0:
+                    print(f"⚠️ [UPDATE WARNING] No rows updated for IDPEL {idpel}")
+                    print(f"   Possible reasons:")
+                    print(f"   - IDPEL not found")
+                    print(f"   - UNITUP mismatch (expected: {self.unitup_filter})")
+                    print(f"   - BLTH mismatch (expected: {self.blth_filter})")
                 
                 success_count += rows_affected
             
@@ -825,7 +907,46 @@ class MonitoringService:
         finally:
             cursor.close()
             conn.close()
-            
+
+
+    # ✅ JUGA PERBAIKI _add_filters agar tidak duplikasi
+    def _add_filters(self, query, params=None):
+        """
+        Add UNITUP and BLTH filters to query if needed
+        
+        Args:
+            query: SQL query string
+            params: List of parameters
+        
+        Returns:
+            Tuple of (modified_query, modified_params)
+        """
+        if params is None:
+            params = []
+        
+        # ✅ PERBAIKAN: Cek apakah filter sudah ada di query
+        # Add UNITUP filter if specified dan belum ada
+        if self.unitup_filter:
+            # Cek apakah sudah ada filter UNITUP di query
+            if "AND UNITUP = %s" not in query and "WHERE UNITUP = %s" not in query:
+                query += " AND UNITUP = %s"
+                params.append(self.unitup_filter)
+                print(f"[FILTER] Adding UNITUP filter: {self.unitup_filter}")
+            else:
+                print(f"[FILTER] UNITUP filter already in query, skipping")
+        
+        # Add BLTH filter if specified dan belum ada
+        if self.blth_filter:
+            # Cek apakah sudah ada filter BLTH di query
+            if "WHERE BLTH = %s" not in query and "AND BLTH = %s" not in query:
+                query += " AND BLTH = %s"
+                params.append(self.blth_filter)
+                print(f"[FILTER] Adding BLTH filter: {self.blth_filter}")
+            else:
+                print(f"[FILTER] BLTH filter already in query, skipping")
+        
+        return query, params
+     
 # def get_detail_pelanggan_dlpd_hb(self, table, blth, kdkelompok, hasil_pemeriksaan=None, 
 #                                   dlpd_hitung=None, filter_marking=False):
 #     """
