@@ -1,10 +1,29 @@
-<!-- templates/dashboard_ulp.html - AUTO-BILLING VERSION -->
+<!-- templates/dashboard_ulp.html - WITH LOTTIE LOADING -->
 {% extends "base.html" %}
 
 {% block title %}Dashboard ULP{% endblock %}
 {% block page_title %}Dashboard {{ unitup }}{% endblock %}
 
 {% block content %}
+<!-- =================== LOTTIE LOADING OVERLAY =================== -->
+<div id="lottie-loading-overlay" style="display: none;">
+    <div class="lottie-loading-content">
+       <dotlottie-wc 
+    id="lottie-player"
+    src="https://lottie.host/88927c80-ea11-4a87-a441-13b10b539df0/MMwIijMIGo.lottie"
+    style="width: 380px; height: 320px;" 
+    autoplay 
+    loop>
+</dotlottie-wc>
+
+        <h3 class="lottie-loading-title" id="lottie-loading-title">Processing</h3>
+        <p class="lottie-loading-message" id="lottie-loading-message">
+            Mohon tunggu<span class="lottie-loading-dots"></span>
+        </p>
+    </div>
+</div>
+
+<!-- =================== MAIN CONTENT =================== -->
 <div class="row mb-4">
     <div class="col-12">
         <h3>Selamat Datang, {{ nama }}</h3>
@@ -12,44 +31,14 @@
     </div>
 </div>
 
-<!-- ✨ INFO AUTO-BILLING -->
-<!-- <div class="row mb-4">
-    <div class="col-12">
-        <div class="alert alert-success">
-            <h5 class="alert-heading">
-                <i class="bi bi-robot"></i> ✨ Auto-Process Billing Aktif!
-            </h5>
-            <hr>
-            <div class="row">
-                <div class="col-md-6">
-                    <strong><i class="bi bi-upload"></i> Upload DPM Baru:</strong>
-                    <ul class="small mb-0 mt-2">
-                        <li>Upload file Excel → <strong>Billing otomatis diproses</strong></li>
-                        <li>Tidak perlu klik tombol tambahan</li>
-                        <li>Langsung lihat hasil di tabel summary</li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <strong><i class="bi bi-pencil-square"></i> Update Koreksi DPM:</strong>
-                    <ul class="small mb-0 mt-2">
-                        <li>Update data → <strong>Billing otomatis di-refresh</strong></li>
-                        <li>MARKING_KOREKSI otomatis +1</li>
-                        <li>Data billing langsung ter-update</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
 <!-- ✨ INFO AUTO-BILLING dengan Riwayat Upload -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="alert alert-success">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="alert-heading mb-0">
-                    <i class=></i> ⚡️ History Upload DPM
+                    <i class="bi bi-clock-history"></i> ⚡️ History Upload DPM
                 </h5>
-                <!-- Badge untuk periode yang sudah diupload -->
                 <div>
                     <span class="badge bg-white text-success">
                         <i class="bi bi-database-check"></i> Data Tersedia: 
@@ -59,7 +48,6 @@
             </div>
             <hr>
             
-            <!-- Daftar Periode yang sudah diupload (12 bulan terakhir) -->
             {% if uploaded_months %}
             <div class="mb-3">
                 <div class="d-flex align-items-center mb-2">
@@ -74,31 +62,10 @@
                     {% endfor %}
                 </div>
             </div>
-            <hr>
             {% endif %}
-            
-            <!-- <div class="row">
-                <div class="col-md-6">
-                    <strong><i class="bi bi-upload"></i> Upload DPM Baru:</strong>
-                    <ul class="small mb-0 mt-2">
-                        <li>Upload file Excel → <strong>Billing otomatis diproses</strong></li>
-                        <li>Tidak perlu klik tombol tambahan</li>
-                        <li>Langsung lihat hasil di tabel summary</li>
-                    </ul>
-                </div>
-                <div class="col-md-6">
-                    <strong><i class="bi bi-pencil-square"></i> Update Koreksi DPM:</strong>
-                    <ul class="small mb-0 mt-2">
-                        <li>Update data → <strong>Billing otomatis di-refresh</strong></li>
-                        <li>MARKING_KOREKSI otomatis +1</li>
-                        <li>Data billing langsung ter-update</li>
-                    </ul>
-                </div>
-            </div> -->
         </div>
     </div>
 </div>
-
 
 <!-- Upload Forms -->
 <div class="row mb-4">
@@ -107,7 +74,6 @@
         <div class="card h-100">
             <div class="card-header bg-primary text-white">
                 <i class="bi bi-cloud-upload"></i> Upload DPM Baru
-                <!-- <span class="badge bg-light text-primary float-end">Auto-Billing</span> -->
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data" id="form-upload-dpm">
@@ -137,8 +103,7 @@
         <div class="card h-100 border-warning">
             <div class="card-header bg-warning text-dark">
                 <i class="bi bi-pencil-square"></i> <strong>Update DPM BLTH Kini</strong>
-                <!-- <span class="badge bg-dark float-end">Auto-Refresh</span> -->
-                {% if role == 'UP3' %}
+                {% if role == 'UP3' or role == 'UP3_MANAGE' %}
                     <span class="badge bg-danger">UP3 Mode</span>
                 {% endif %}
             </div>
@@ -151,26 +116,11 @@
                         <input type="file" name="file_dpm_koreksi" class="form-control" accept=".xlsx,.xls" required>
                         <small class="text-muted">
                             <strong>Kolom wajib:</strong> BLTH, IDPEL, LWBPCABUT, LWBPPASANG, SAHLWBP
-                            {% if role == 'UP3' %}
+                            {% if role == 'UP3' or role == 'UP3_MANAGE' %}
                             <br><strong>Wajib tambahkan:</strong> UNITUP
                             {% endif %}
                         </small>
                     </div>
-                    <!-- <div class="alert alert-warning py-2 small mb-3">
-                        <i class="bi bi-info-circle"></i> 
-                        <strong>Fitur Update Koreksi:</strong>
-                        <ul class="mb-0 mt-1">
-                            <li><strong>LWBPPAKAI dihitung otomatis</strong> dari: <code>LWBPCABUT - SLALWBP + SAHLWBP - LWBPPASANG</code></li>
-                            <li><strong>MARKING_KOREKSI +1</strong> setiap update</li>
-                            <li>Update berdasarkan <strong>BLTH + IDPEL + UNITUP</strong></li>
-                            {% if role == 'UP3' %}
-                            <li><strong>🔓 UP3:</strong> Kolom <strong>UNITUP WAJIB</strong> ada di Excel!</li>
-                            {% else %}
-                            <li><strong>🔒 ULP:</strong> UNITUP otomatis dari session Anda</li>
-                            {% endif %}
-                            <li><strong>🤖 Billing otomatis di-refresh</strong></li>
-                        </ul>
-                    </div> -->
                     <button type="submit" class="btn btn-warning w-100 btn-lg">
                         <i class="bi bi-arrow-repeat"></i> Update & Auto-Refresh
                     </button>
@@ -180,7 +130,7 @@
     </div>
 </div>
 
-<!-- Upload DIL (Nomor Meter) - Pindah ke card terpisah -->
+<!-- Upload DIL -->
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card">
@@ -193,7 +143,7 @@
                         <label class="form-label">File DIL (Excel)</label>
                         <input type="file" name="file_dil" class="form-control" accept=".xlsx,.xls" required>
                         <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> Upload DIL (Cukup Kolom IDPEL & NOMORKWH )
+                            <i class="bi bi-info-circle"></i> Upload DIL (Cukup Kolom IDPEL & NOMORKWH)
                         </small>
                     </div>
                     <button type="submit" class="btn btn-info w-100">
@@ -203,69 +153,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Quick Actions Card -->
-    <!-- <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-dark text-white">
-                <i class="bi bi-lightning"></i> Quick Actions
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="/view_billing?unitup_filter={{ unitup }}&auto_filter=1" 
-                       class="btn btn-primary btn-lg">
-                        <i class="bi bi-table"></i> Lihat Data Billing
-                    </a>
-                    {% if role == 'UP3' %}
-                    <a href="{{ url_for('dashboard_up3') }}" 
-                       class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Kembali ke Dashboard UP3
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div> -->
 </div>
-
-<!-- Info Section -->
-<!-- <div class="row mb-4">
-    <div class="col-12">
-        <div class="alert alert-light border">
-            <h6 class="alert-heading"><i class="bi bi-lightbulb"></i> Workflow Penggunaan</h6>
-            <hr>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="d-flex align-items-start">
-                        <div class="badge bg-primary rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">1</div>
-                        <div>
-                            <strong>Upload DPM Baru</strong>
-                            <p class="small mb-0 text-muted">Untuk periode baru → Billing otomatis ter-generate</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="d-flex align-items-start">
-                        <div class="badge bg-warning rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">2</div>
-                        <div>
-                            <strong>Update Koreksi (Opsional)</strong>
-                            <p class="small mb-0 text-muted">Jika ada koreksi → Billing otomatis di-refresh</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="d-flex align-items-start">
-                        <div class="badge bg-success rounded-circle me-2" style="width: 30px; height: 30px; line-height: 30px;">3</div>
-                        <div>
-                            <strong>Lihat Hasil Billing</strong>
-                            <p class="small mb-0 text-muted">Cek data billing yang sudah otomatis diproses</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
 
 <!-- Summary Statistics -->
 <div class="row">
@@ -317,7 +205,6 @@
                         </div>
                     </div>
                     
-                    <!-- Progress bar visualization -->
                     <div class="mt-3">
                         <div class="progress" style="height: 25px;">
                             {% set total = row.total if row.total > 0 else 1 %}
@@ -349,16 +236,52 @@
         </div>
     {% endif %}
 </div>
-
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
+<!-- =================== LOAD LOTTIE CDN =================== -->
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js" type="module"></script>
+
 <script>
-    console.log('🔍 DEBUG uploaded_months:', {{ uploaded_months|tojson }});
-console.log('📊 Length:', {{ uploaded_months|length }});
+console.log('🚀 [DASHBOARD_ULP] Script loading...');
+
+// =================== LOTTIE LOADING FUNCTIONS ===================
+function showLottieLoading(title = 'Processing', message = 'Mohon tunggu...') {
+    console.log('🎬 [LOTTIE] Show loading:', title, message);
+    
+    const overlay = document.getElementById('lottie-loading-overlay');
+    const titleElement = document.getElementById('lottie-loading-title');
+    const messageElement = document.getElementById('lottie-loading-message');
+    
+    if (titleElement) titleElement.textContent = title;
+    if (messageElement) {
+        messageElement.innerHTML = message + '<span class="lottie-loading-dots"></span>';
+    }
+    
+    if (overlay) {
+        overlay.style.display = 'flex';
+        setTimeout(() => overlay.classList.add('show'), 10);
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideLottieLoading() {
+    console.log('🎬 [LOTTIE] Hide loading');
+    
+    const overlay = document.getElementById('lottie-loading-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    // =================== FILE VALIDATION ===================
+    console.log('📋 [DASHBOARD_ULP] DOM Ready');
+    
+    // =================== FILE INPUT VALIDATION ===================
     const fileInputs = document.querySelectorAll('input[type="file"]');
     fileInputs.forEach(input => {
         input.addEventListener('change', function(e) {
@@ -371,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Show file name preview
                 const formGroup = e.target.closest('.mb-3');
                 let preview = formGroup.querySelector('.file-preview');
                 if (!preview) {
@@ -380,6 +302,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     formGroup.appendChild(preview);
                 }
                 preview.innerHTML = `<i class="bi bi-file-earmark-excel"></i> File: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+            }
+        });
+    });
+
+    // =================== FORM SUBMIT HANDLER ===================
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const formId = form.id;
+            const formType = form.querySelector('input[name="form_type"]')?.value;
+            
+            console.log('📤 Form submitted:', formId, 'type:', formType);
+            
+            // Validate file input
+            const fileInput = form.querySelector('input[type="file"]');
+            if (fileInput && fileInput.required && !fileInput.files.length) {
+                e.preventDefault();
+                alert('❌ Silakan pilih file terlebih dahulu!');
+                return false;
+            }
+            
+            // Show Lottie loading with custom message
+            if (formType === 'upload_dpm' || formId === 'form-upload-dpm') {
+                showLottieLoading('📤 Upload DPM', 'Sedang memproses billing otomatis, mohon tunggu');
+            } 
+            else if (formType === 'update_koreksi' || formId === 'form-update-koreksi') {
+                showLottieLoading('🔄 Update Koreksi DPM', 'Sedang memperbarui data & refresh billing');
+            }
+            else if (formId === 'form-upload-dil') {
+                showLottieLoading('📥 Upload DIL', 'Sedang menyimpan data induk langganan');
+            } 
+            else {
+                showLottieLoading('⚙️ Processing', 'Sistem sedang memproses data');
+            }
+
+            // Disable button
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                const originalHTML = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+                
+                // Reset after timeout (fallback)
+                setTimeout(() => {
+                    hideLottieLoading();
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }, 60000);
             }
         });
     });
@@ -393,118 +362,88 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // =================== LOADING INDICATOR FOR FORMS ===================
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                // Disable button
-                submitBtn.disabled = true;
-                
-                // Save original content
-                const originalHTML = submitBtn.innerHTML;
-                
-                // Show loading state
-                const formType = form.id;
-                let loadingText = '<i class="bi bi-hourglass-split spinner-border spinner-border-sm"></i> Processing...';
-                
-                if (formType === 'form-upload-dpm') {
-                    loadingText = '<i class="bi bi-hourglass-split"></i> Uploading & Auto-Processing Billing...';
-                } else if (formType === 'form-update-koreksi') {
-                    loadingText = '<i class="bi bi-hourglass-split"></i> Updating & Auto-Refreshing Billing...';
-                }
-                
-                submitBtn.innerHTML = loadingText;
-                
-                // Show progress toast (optional)
-                showProgressToast(formType);
-                
-                // Re-enable after timeout as fallback
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalHTML;
-                }, 60000); // 60 seconds timeout
-            }
-        });
-    });
+    console.log('✅ Dashboard scripts loaded');
+});
 
-    // =================== PROGRESS TOAST ===================
-    function showProgressToast(formType) {
-        const messages = {
-            'form-upload-dpm': '📤 Uploading DPM... Billing akan otomatis diproses.',
-            'form-update-koreksi': '🔄 Updating DPM... Billing akan otomatis di-refresh.',
-            'form-upload-dil': '📥 Uploading DIL...'
-        };
-        
-        const message = messages[formType] || 'Processing...';
-        
-        // Create toast element (Bootstrap 5 style)
-        const toast = document.createElement('div');
-        toast.className = 'toast position-fixed bottom-0 end-0 m-3';
-        toast.setAttribute('role', 'alert');
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            <div class="toast-header bg-primary text-white">
-                <strong class="me-auto">
-                    <i class="bi bi-gear-fill"></i> Auto-Process
-                </strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body">
-                ${message}
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Show toast (Bootstrap 5)
-        const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
-        bsToast.show();
-        
-        // Remove after hidden
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
-    }
-
-    // =================== DEBUG LOG ===================
-    console.log('✅ Dashboard ULP Auto-Billing loaded');
-    console.log('📊 Summary count:', {{ summary|length }});
+// =================== AUTO HIDE LOADING ON PAGE LOAD ===================
+window.addEventListener('load', function() {
+    console.log('📄 Page fully loaded');
+    setTimeout(() => {
+        hideLottieLoading();
+    }, 500);
 });
 </script>
 
-<!-- Custom CSS for enhanced UI -->
+<!-- =================== CUSTOM CSS =================== -->
 <style>
-.card {
-    transition: transform 0.2s, box-shadow 0.2s;
+/* =================== LOTTIE LOADING OVERLAY STYLES =================== */
+#lottie-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #ffffffd9;
+    backdrop-filter: blur(8px);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+#lottie-loading-overlay.show {
+    opacity: 1;
 }
 
-.btn-lg {
-    padding: 0.75rem 1.5rem;
-    font-weight: 500;
+.lottie-loading-content {
+    text-align: center;
+    animation: fadeInUp 0.5s ease-out;
 }
 
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 0.15em;
+.lottie-loading-title {
+    color: #030101;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.progress-bar {
-    font-size: 0.75rem;
-    font-weight: bold;
+.lottie-loading-message {
+    color: #090404;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
 }
 
-.badge {
-    font-weight: 500;
+.lottie-loading-dots::after {
+    content: '...';
+    animation: ellipsis 1.5s infinite;
 }
 
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ellipsis {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+    100% { content: ''; }
+}
+
+/* =================== EXISTING DASHBOARD STYLES =================== */
 .file-preview {
     animation: slideIn 0.3s ease-out;
 }
@@ -517,6 +456,76 @@ document.addEventListener('DOMContentLoaded', function() {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: none;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+.progress-bar {
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: width 0.6s ease;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.8em;
+}
+
+/* =================== RESPONSIVE =================== */
+@media (max-width: 768px) {
+    .lottie-loading-title {
+        font-size: 1.4rem;
+    }
+    
+    .lottie-loading-message {
+        font-size: 0.9rem;
+    }
+    
+    #lottie-player {
+        width: 250px !important;
+        height: 250px !important;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
     }
 }
 </style>

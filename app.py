@@ -58,10 +58,10 @@ app.secret_key = 'your_super_secret_key_here'
 
 app.register_blueprint(monitoring_bp)
 
-# Upload folder
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# # Upload folder
+# UPLOAD_FOLDER = 'uploads'
+# if not os.path.exists(UPLOAD_FOLDER):
+#     os.makedirs(UPLOAD_FOLDER)
 
 # Database connection
 engine = create_engine("mysql+pymysql://root:@localhost/billing_gabungan", 
@@ -2997,7 +2997,7 @@ def sync_nomorkwh():
 @app.route('/upload_dil', methods=['POST'])
 def upload_dil():
     """
-    📤 Upload data DIL (nomor KWH, dll)
+    📤 Upload data DIL (nomor KWH, dll) dengan pengecekan duplikasi
     """
     if 'loggedin' not in session:
         return redirect(url_for('login'))
@@ -3028,12 +3028,44 @@ def upload_dil():
 
         # ✅ Pilih hanya kolom yang benar-benar ada di tabel DIL
         upload_cols = ['IDPEL', 'NAMA', 'TARIF', 'DAYA', 'NOMORKWH', 'ALAMAT']
-        df_upload = df[[c for c in upload_cols if c in df.columns]]
+        df_upload = df[[c for c in upload_cols if c in df.columns]].copy()
 
-        # ✅ Simpan ke tabel DIL tanpa kolom UNITUP
-        df_upload.to_sql('dil', engine, if_exists='append', index=False)
+        # ✅ PERBAIKAN: Cek data yang sudah ada di database
+        existing_query = text("""
+            SELECT IDPEL, NOMORKWH 
+            FROM dil
+        """)
+        df_existing = pd.read_sql(existing_query, engine)
+        
+        # Normalisasi IDPEL dari database juga
+        df_existing['IDPEL'] = df_existing['IDPEL'].apply(normalize_idpel)
+        
+        # Buat set untuk pengecekan cepat
+        existing_pairs = set(
+            zip(df_existing['IDPEL'], df_existing['NOMORKWH'])
+        )
+        
+        logger.info(f"📊 Total existing DIL records: {len(existing_pairs)}")
+        
+        # ✅ Filter hanya data baru (yang belum ada kombinasi IDPEL + NOMORKWH)
+        def is_new_record(row):
+            pair = (row['IDPEL'], str(row['NOMORKWH']).strip())
+            return pair not in existing_pairs
+        
+        df_new = df_upload[df_upload.apply(is_new_record, axis=1)]
+        
+        skipped_count = len(df_upload) - len(df_new)
+        
+        if df_new.empty:
+            flash(f'⚠️ Semua data ({len(df_upload)} records) sudah ada di database. Tidak ada yang diupload.', 'warning')
+            logger.info(f"⚠️ No new DIL records to upload")
+            return redirect(request.referrer or url_for('dashboard_ulp'))
+        
+        # ✅ Simpan hanya data baru ke tabel DIL
+        df_new.to_sql('dil', engine, if_exists='append', index=False)
 
-        flash(f'Berhasil upload {len(df_upload)} data DIL', 'success')
+        flash(f'✅ Berhasil upload {len(df_new)} data DIL baru. {skipped_count} data sudah ada .', 'success')
+        logger.info(f"✅ Uploaded {len(df_new)} new DIL records, skipped {skipped_count} duplicates")
 
         # ✅ Auto-sync ke billing (tanpa filter unitup)
         try:
@@ -3042,17 +3074,83 @@ def upload_dil():
                     UPDATE billing b
                     JOIN dil d ON b.idpel = d.idpel
                     SET b.nomorkwh = d.nomorkwh
-                    WHERE (b.nomorkwh IS NULL OR b.nomorkwh = '')
+                    WHERE (b.nomorkwh IS NULL OR b.nomorkwh = '' OR b.nomorkwh = '-')
                 """)
                 result = conn.execute(sql)
-                flash(f'Auto-sync: {result.rowcount} nomor KWH diupdate', 'info')
+                
+                if result.rowcount > 0:
+                    flash(f'🔄 Auto-sync: {result.rowcount} nomor KWH diupdate ke billing', 'info')
+                    logger.info(f"✅ Auto-synced {result.rowcount} NOMORKWH to billing")
         except Exception as sync_err:
-            flash(f'Auto-sync gagal: {str(sync_err)}', 'warning')
+            logger.error(f"⚠️ Auto-sync gagal: {str(sync_err)}")
+            flash(f'⚠️ Auto-sync gagal: {str(sync_err)}', 'warning')
 
     except Exception as e:
-        flash(f'Gagal upload DIL: {str(e)}', 'danger')
+        logger.error(f"❌ Gagal upload DIL: {str(e)}")
+        logger.error(traceback.format_exc())
+        flash(f'❌ Gagal upload DIL: {str(e)}', 'danger')
 
     return redirect(request.referrer or url_for('dashboard_ulp'))
+
+# @app.route('/upload_dil', methods=['POST'])
+# def upload_dil():
+#     """
+#     📤 Upload data DIL (nomor KWH, dll)
+#     """
+#     if 'loggedin' not in session:
+#         return redirect(url_for('login'))
+
+#     if 'file_dil' not in request.files:
+#         flash('Tidak ada file yang diupload', 'warning')
+#         return redirect(request.referrer or url_for('dashboard_ulp'))
+
+#     file = request.files['file_dil']
+
+#     if file.filename == '':
+#         flash('Tidak ada file yang dipilih', 'warning')
+#         return redirect(request.referrer or url_for('dashboard_ulp'))
+
+#     try:
+#         df = pd.read_excel(file)
+#         df.columns = [c.strip().upper() for c in df.columns]
+
+#         # ✅ Kolom wajib
+#         required = ['IDPEL', 'NOMORKWH']
+#         for col in required:
+#             if col not in df.columns:
+#                 flash(f'Kolom {col} tidak ditemukan', 'danger')
+#                 return redirect(request.referrer or url_for('dashboard_ulp'))
+
+#         # ✅ Normalisasi IDPEL
+#         df['IDPEL'] = df['IDPEL'].apply(normalize_idpel)
+
+#         # ✅ Pilih hanya kolom yang benar-benar ada di tabel DIL
+#         upload_cols = ['IDPEL', 'NAMA', 'TARIF', 'DAYA', 'NOMORKWH', 'ALAMAT']
+#         df_upload = df[[c for c in upload_cols if c in df.columns]]
+
+#         # ✅ Simpan ke tabel DIL tanpa kolom UNITUP
+#         df_upload.to_sql('dil', engine, if_exists='append', index=False)
+
+#         flash(f'Berhasil upload {len(df_upload)} data DIL', 'success')
+
+#         # ✅ Auto-sync ke billing (tanpa filter unitup)
+#         try:
+#             with engine.begin() as conn:
+#                 sql = text("""
+#                     UPDATE billing b
+#                     JOIN dil d ON b.idpel = d.idpel
+#                     SET b.nomorkwh = d.nomorkwh
+#                     WHERE (b.nomorkwh IS NULL OR b.nomorkwh = '')
+#                 """)
+#                 result = conn.execute(sql)
+#                 flash(f'Auto-sync: {result.rowcount} nomor KWH diupdate', 'info')
+#         except Exception as sync_err:
+#             flash(f'Auto-sync gagal: {str(sync_err)}', 'warning')
+
+#     except Exception as e:
+#         flash(f'Gagal upload DIL: {str(e)}', 'danger')
+
+#     return redirect(request.referrer or url_for('dashboard_ulp'))
 
 
 # =================== VIEW AUDIT LOG ===================

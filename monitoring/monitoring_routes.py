@@ -243,10 +243,56 @@ def dashboard_monitoring():
     selected_blth = request.args.get('blth')  # None if not present
 
     # If blth param is missing entirely, redirect to same route with default blth
+    # if 'blth' not in request.args:
+    #     default_blth = get_latest_blth()  # ambil BLTH terbaru
+    #     # preserve unitup in URL (could be None or empty string)
+    #     # jika fungsi ada di blueprint gunakan '.dashboard_monitoring' atau sesuaikan endpoint
+    #     return redirect(url_for('.dashboard_monitoring', unitup=selected_unitup or '', blth=default_blth))
+
+    # Get filter parameters from request
+    selected_unitup = request.args.get('unitup')
+    selected_blth = request.args.get('blth')  # None if not present
+
+    # ✅ PERBAIKAN: Cek apakah ada data di database dulu
     if 'blth' not in request.args:
         default_blth = get_latest_blth()  # ambil BLTH terbaru
-        # preserve unitup in URL (could be None or empty string)
-        # jika fungsi ada di blueprint gunakan '.dashboard_monitoring' atau sesuaikan endpoint
+        
+        # ✅ CRITICAL: Jika tidak ada BLTH (tabel kosong), tampilkan halaman kosong
+        if not default_blth:
+            # Tabel billing kosong
+            available_blth = []
+            available_unitup = get_available_unitup_list() if is_admin else []
+            
+            return render_template("monitoring_dashboard.html",
+                tables=[],
+                recap_all={}, 
+                total_all={}, 
+                summary_all={'NAIK': {'jumlah': 0, 'persentase': 0}, 
+                            'TURUN': {'jumlah': 0, 'persentase': 0},
+                            'DIV/NA': {'jumlah': 0, 'persentase': 0},
+                            'AMAN': {'jumlah': 0, 'persentase': 0}},
+                recap_marking={}, 
+                total_marking={}, 
+                summary_marking={'NAIK': {'jumlah': 0, 'persentase': 0}, 
+                                'TURUN': {'jumlah': 0, 'persentase': 0},
+                                'DIV/NA': {'jumlah': 0, 'persentase': 0},
+                                'AMAN': {'jumlah': 0, 'persentase': 0}},
+                per_table_recap={},
+                per_table_marking={},
+                pivot_tables_all={},
+                pivot_tables_marking={},
+                pivot_tables_dlpd={},
+                pivot_tables_koreksi={},
+                pivot_tables_ganda={},
+                available_unitup=available_unitup,
+                available_blth=available_blth,
+                selected_unitup=selected_unitup,
+                selected_blth=None,
+                error_message="Tidak ada data billing. Silakan upload data DPM terlebih dahulu.",
+                username=user
+            )
+        
+        # ✅ Jika ada default_blth, redirect dengan blth tersebut
         return redirect(url_for('.dashboard_monitoring', unitup=selected_unitup or '', blth=default_blth))
 
     # Get available options for filters
